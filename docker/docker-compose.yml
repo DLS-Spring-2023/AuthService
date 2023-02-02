@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  auth:
+    container_name: jauth-auth
+    image: jauth-auth:latest
+    healthcheck:
+      test: [ "CMD", "node", "-e", "require('http').get('http://localhost:${AUTH_PORT}/status', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})" ]
+      timeout: 5s
+      interval: 5s
+      retries: 3
+    ports:
+      - ${AUTH_PORT}:3000/tcp
+    networks:
+      - jauth
+    environment:
+      REQUIRE_AUTH: 0 #change to 0 to disable auth (not recommended in production)
+      DB_HOST: ${DB_HOST}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+
+  mariadb:
+    container_name: jauth-db
+    image: mariadb:latest
+    restart: unless-stopped
+    networks:
+      - jauth
+    volumes:
+      - jauth-db:/var/lib/mysql:rw
+    ports:
+      - 3306:3306
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASS}
+      MARIADB_DATABASE: ${DB_SCHEMA}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASS}
+
+networks:
+  jauth:
+
+volumes:
+  jauth-db:
