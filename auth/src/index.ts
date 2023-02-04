@@ -8,12 +8,11 @@ declare module "express-serve-static-core" {
         auth: {
             accessToken: string;
             sessionToken: string;
+            didTokensRefresh?: boolean;
             user: {
                 id: string;
                 name: string;
                 email: string;
-                personalOrgId: string;
-                didTokensRefresh?: boolean;
             }
         }
     }

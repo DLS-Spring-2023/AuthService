@@ -68,7 +68,7 @@
 
             <!-- Submit Button -->
             <button disabled={loading} type="submit" class="{loading ? 'login-disabled' : 'login-button'} rounded-md h-10 mt-8" >
-                {#if loading}<div class="spinner"><LoadingSpinner/></div>{:else}Sign in{/if}
+                {#if loading}<div class="spinner w-full"><LoadingSpinner/></div>{:else}Sign in{/if}
             </button>
         </form>
         <div class="flex justify-center mt-6">

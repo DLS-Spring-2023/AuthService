@@ -16,6 +16,7 @@
     }
     
     const selectTheme = (t: string) => {
+        theme = t;
         if (t === 'dark') {
             document.documentElement.classList.add('dark')
             localStorage.theme = t;

@@ -6,7 +6,6 @@ const router = Router();
 
 // Get Account (/v1/account)
 router.post('/', (req, res) => {
-    // TODO:
     res.send({...req.auth})
 });
 

@@ -23,10 +23,10 @@ class ProjectRepo {
     /**
      * findByOrgId
      */
-    public async findByOrgId(id: string) {
+    public async findByAccountId(id: string) {
         const conn = await this.db.getConnection();
         
-        const res = await conn.query(`SELECT * from project WHERE (organization_id = ?);`, [id]);
+        const res = await conn.query(`SELECT * from project WHERE (account_id = ?);`, [id]);
         conn.release();
 
         delete res.meta;
@@ -37,13 +37,13 @@ class ProjectRepo {
     /**
      * create
      */
-    public async create(name: string, org_id: string) {
+    public async create(name: string, account_id: string) {
         const conn = await this.db.getConnection();
 
         const id = Snowflake.nextHexId();
         
-        const query = `INSERT INTO project (id, organization_id, name) VALUES (?, ?, ?) RETURNING *;`;
-        const prep  = [id, org_id, name];
+        const query = `INSERT INTO project (id, account_id, name) VALUES (?, ?, ?) RETURNING *;`;
+        const prep  = [id, account_id, name];
 
         let res;
         try {
@@ -54,6 +54,9 @@ class ProjectRepo {
         } finally {
             conn.release();
         }
+
+        console.log(res);
+        
 
         return res;
     }

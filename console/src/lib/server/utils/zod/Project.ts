@@ -9,9 +9,6 @@ class Project {
                 .string(this.stringProps)
                 .min(2, { message: 'Name must be at least 2 characters' })
                 .max(30, { message: 'Name must not be longer than 30 characters' }),
-            organization_id: z
-                .string(this.stringProps)
-                .min(1, { message: 'Orgnization ID is missing' })
         });
 
     parse(data: unknown) {

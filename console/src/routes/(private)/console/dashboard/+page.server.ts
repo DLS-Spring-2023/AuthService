@@ -9,7 +9,9 @@ export const load: PageServerLoad = async ({locals, fetch}) => {
         const response = await fetch(AUTH_TARGET + '/project', {
             method: 'POST',
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ accessToken: locals.consoleUser?.accessToken })
+            body: JSON.stringify({ 
+                accessToken: locals.authTokens?.accessToken,
+            })
         });
 
         if (!response.ok) {
@@ -22,7 +24,6 @@ export const load: PageServerLoad = async ({locals, fetch}) => {
 
     return {
         projects: fetchPersonalProjects(),
-        activeOrg: locals.consoleUser?.personalOrgId
     }
 };
 

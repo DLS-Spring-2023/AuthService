@@ -1,6 +1,6 @@
 // See https://kit.svelte.dev/docs/types#app
 
-import type { ConsoleUser } from "$lib/server/utils/inerfaces/interfaces";
+import type { AuthTokens, ConsoleUser } from "$lib/server/utils/inerfaces/interfaces";
 
 // for information about these interfaces
 declare global {
@@ -9,6 +9,7 @@ declare global {
 		interface Locals {
 			REQUIRE_AUTH: boolean,
 			consoleUser?: ConsoleUser,
+			authTokens?: AuthTokens,
 		}
 		// interface PageData {}
 		// interface Platform {}

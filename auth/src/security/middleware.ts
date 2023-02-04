@@ -18,7 +18,6 @@ export const authenticateAccount = async (req: Request, res: Response, next: Nex
                 id: verifiedAccess.account.id, 
                 name: verifiedAccess.account.name, 
                 email: verifiedAccess.account.email,
-                personalOrgId: verifiedAccess.account.personal_org_id || '',
             }
         };
         next();
@@ -27,18 +26,17 @@ export const authenticateAccount = async (req: Request, res: Response, next: Nex
 
     // Verify session token if access was not verified
     const verifiedSession = sessionToken ? await AccountJWT.validateAndRenewSession(sessionToken) : null;
-    if (verifiedSession && verifiedSession.account.id) {
+    if (verifiedSession && verifiedSession.token && verifiedSession.account.id) {
         
         accessToken = await AccountJWT.signAccessToken(verifiedSession.account.id, verifiedSession.session_id);
         req.auth = { 
-            accessToken, 
-            sessionToken, 
+            accessToken,
+            sessionToken: verifiedSession.token, 
+            didTokensRefresh: true,
             user: {
                 id: verifiedSession.account.id, 
                 name: verifiedSession.account.name, 
                 email: verifiedSession.account.email, 
-                personalOrgId: verifiedSession.account.personal_org_id || '',
-                didTokensRefresh: true 
             }
         };
         next();

@@ -8,6 +8,11 @@ const router = Router();
 
 // Create Account (/v1/account/create)
 router.post('/create', async (req, res, next) => {
+
+    if (process.env.ALLOW_MULTIPLE_ACCOUNTS !== '1' && await db.account.count() > 1) {
+        res.status(403).send({ code: 403, message: "Only one account can be registered at this time." });
+        
+    }
     
     const { name, password, email } = req.body;
     
@@ -27,9 +32,9 @@ router.post('/create', async (req, res, next) => {
         return;
     }
     
-    const account = await db.account.create({ name, email: email.toLowerCase(), password_hash: password });
+    const account = await db.account.insert({ name, email: email.toLowerCase(), password_hash: password });
     
-    // Test for create error
+    // Test for insert error
     if (account.error && account.error === DbError.DUP_ENTRY) {
         res.status(409).send({ code: 409, message: "Email already in use" });
         return;
@@ -72,6 +77,7 @@ async function login (req: Request, res: Response) {
     const account_id = req.body.account.id;
 
     const session = await AccountJWT.signNewSessionToken(account_id);
+    
     if (!session) {
         res.status(500).send({ code: 500, message: "Internal Error" });
         return;

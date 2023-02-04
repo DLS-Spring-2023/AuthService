@@ -2,8 +2,9 @@ export interface ConsoleUser {
     id?: string;
     name?: string;
     email?: string;
-    personalOrgId?: string;
-    authenticated: boolean;
+}
+
+export interface AuthTokens {
     accessToken?: string;
-    sessionToken?: string;
+    sessiontoken?: string;
 }

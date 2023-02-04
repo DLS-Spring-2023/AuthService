@@ -3,9 +3,9 @@ import db from '../../../database/DatabaseGateway.js';
 
 const router = Router();
 
-// Get all projects from personal org (/v1/project)
+// Get all personal projects (/v1/project)
 router.post('/', async (req, res) => {
-    const projects = await db.project.findByOrgId(req.auth.user.personalOrgId);
+    const projects = await db.project.findByAccountId(req.auth.user.id);
     res.send({ data: projects });
 });
 
@@ -30,26 +30,14 @@ router.post('/get/:id', async (req, res) => {
 
 // Create new project (/v1/project/create)
 router.post('/create', async (req, res) => {
-    const { name, organization_id } = req.body;
+    const { name } = req.body;
 
-    if (
-        !name || typeof name !== "string" ||
-        !organization_id || typeof organization_id !== "string"
-    ) {
+    if (!name || typeof name !== "string") {
         res.status(400).send({ code: 400, message: "Bad Request" });
         return;
     }
 
-    const isOwner = await db.organization.isOwner(req.auth.user.id, organization_id);
-    if (!isOwner) {
-        res.status(403).send({ code: 403, message: "Forbidden"});
-        return;
-    }
-
-    const project = await db.project.create(name, organization_id);
-
-    console.log(project);
-    
+    const project = await db.project.create(name, req.auth.user.id);
 
     // Test for create error
     if (!project || project.error) {

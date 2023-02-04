@@ -45,7 +45,7 @@ export const actions: Actions = {
         });
 
         cookies.set('account_session_token', data.sessionToken, {
-            maxAge: 60 * 60 * 25 * 365 - 10,
+            maxAge: 60 * 60 * 24 * 365 - 10,
             httpOnly: true,
             secure: false, // TODO
             path: '/',

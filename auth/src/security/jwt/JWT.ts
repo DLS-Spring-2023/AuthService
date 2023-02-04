@@ -44,14 +44,15 @@ class JWT extends JwtUtils implements IJWT {
     }
 
     public signNewSessionToken(account_id: string) {
+        const id = Snowflake.nextId();
         const session_id = Snowflake.nextId();
-        const payload = { session_id: String(session_id) }
+        const payload = { id: String(id), session_id: String(session_id) }
 
         return new Promise<{token: string, session_id: bigint} | null>((accept) => {
             jwt.sign(payload, JWT.privateSessionKey, { ...JWT.sessionTokenSignOptions, subject: account_id}, async (error, encoded) => {
                 if (error || !encoded) accept(null);
                 else {
-                    await this.sessionRepo.startNewSession({ session_id: session_id, account_id: account_id });
+                    await this.sessionRepo.startNewSession({ id, session_id: session_id, account_id: account_id });
                     accept({token: encoded, session_id: session_id});
                 }
             });
@@ -59,13 +60,14 @@ class JWT extends JwtUtils implements IJWT {
     }
 
     private renewSessionToken(account_id: string, session_id: bigint) {
-        const payload = { session_id }
+        const id = Snowflake.nextId();
+        const payload = { id: String(id), session_id }
 
         return new Promise<string | null>((accept) => {
             jwt.sign(payload, JWT.privateSessionKey, { ...JWT.sessionTokenSignOptions, subject: account_id}, async (error, encoded) => {
                 if (error || !encoded) accept(null);
                 else {
-                    await this.sessionRepo.renewSession({account_id, session_id});
+                    await this.sessionRepo.renewSession({id, account_id, session_id});
                     accept(encoded);
                 }
             });
@@ -113,8 +115,8 @@ class JWT extends JwtUtils implements IJWT {
                     return;
                 }
 
-                const { session_id, sub } = decoded as JwtPayload;
-                if (!sub || !session_id) {
+                const { id, session_id, sub } = decoded as JwtPayload;
+                if (!id || !sub || !session_id) {
                     accept(null);
                     return;
                 }
@@ -127,16 +129,17 @@ class JWT extends JwtUtils implements IJWT {
                     return;
                 }
 
-                const session = await this.sessionRepo.findValidBySessionId(session_id);
+                const session = await this.sessionRepo.findById(BigInt(id));
+                
                 if (!session || !session.expires) {
                     accept(null);
                     return;
                 }
 
-                // If token is expired or someone used an invalid token, kill session
+                // If token is expired or invalid, kill session
                 const expired = new Date(Number.parseInt(session.expires.toString())).getTime() < Date.now();
-                if (expired) {
-                    this.sessionRepo.killSession(session_id)
+                if (expired || !session.valid) {
+                    this.sessionRepo.killSession(session_id);
                     accept(null);
                     return;
                 }
@@ -149,12 +152,15 @@ class JWT extends JwtUtils implements IJWT {
     /**
      * Verifies, invalidates and renews session
      */
-    public async validateAndRenewSession(token: string): Promise<{ token: string | null, account: Account, session_id: bigint } | null> {
+    public async validateAndRenewSession(token: string): Promise<{ token: string, account: Account, session_id: bigint } | null> {
         const verified = await this.verifySessionToken(token);
-        
         if (!verified || !verified.account.id) return null;
+
+        const newToken = await this.renewSessionToken(verified.account.id, verified.session_id);
+        if (!newToken) return null;
+
         return { 
-            token: await this.renewSessionToken(verified.account.id, verified.session_id), 
+            token: newToken, 
             session_id: verified.session_id,
             account: verified.account,
         };

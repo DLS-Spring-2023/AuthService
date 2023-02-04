@@ -12,6 +12,18 @@ class AccountRepo {
     }
 
     /**
+     * count
+     */
+    public async count() {
+        const conn = await this.db.getConnection();
+        
+        const res = await conn.query(`SELECT COUNT(*) FROM account;`);
+        conn.release();
+
+        return BigInt(res[0]['COUNT(*)']);
+    }
+
+    /**
      * findById
      */
     public async findById(id: string) {
@@ -36,32 +48,20 @@ class AccountRepo {
     }
 
     /**
-     * create
+     * insert
      */
-    public async create(account: Account) {
+    public async insert(account: Account) {
         const conn = await this.db.getConnection();
 
         const pass = await bcrypt.hash(account.password_hash, 12);
+        const id = Snowflake.nextHexId();
 
-        const organization_id = Snowflake.nextHexId();
-        const account_id = Snowflake.nextHexId();
-
-        const query = `
-            INSERT INTO organization         (id, name)                                        VALUES (?, ?);
-            INSERT INTO account              (id, name, email, password_hash, personal_org_id) VALUES (?, ?, ?, ?, ?) RETURNING *;
-            INSERT INTO account_organization (account_id, organization_id, org_rolename)       VALUES (?, ?, ?);
-        `;
-
-        const prep = [
-            organization_id, 'Personal Projects',                           // organization value
-            account_id, account.name, account.email, pass, organization_id, // account values 
-            account_id, organization_id, OrgRole.OWNER                      // join table values
-        ];
+        const query = `INSERT INTO account (id, name, email, password_hash) VALUES (?, ?, ?, ?) RETURNING *;`;
+        const prep = [id, account.name, account.email, pass];
         
         let res;
         try {
-            const result = await conn.query(query, prep);
-            res = result[1]
+            res = await conn.query(query, prep);
         } catch (err: any) {
             res = [{ error: err.code }];
         } finally {

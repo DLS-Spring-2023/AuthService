@@ -10,6 +10,7 @@ export interface Account {
 }
 
 export interface AccountSession {
+    id: bigint;
     session_id: bigint;
     iteration?: number;
     account_id: string;
@@ -29,6 +30,7 @@ export interface User {
 }
 
 export interface UserSession {
+    id: bigint;
     session: bigint;
     iteration?: number;
     account_id: string;
