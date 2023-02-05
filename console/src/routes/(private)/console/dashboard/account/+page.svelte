@@ -42,8 +42,6 @@
                     break;
                 case "failure":
                     form = result.data;
-                    console.log(form);
-                    
                     if (form.error && form.message) {
                         toast.push({ type: ToastType.warning, message: form.message, removeOnNavigate: true });
                     }

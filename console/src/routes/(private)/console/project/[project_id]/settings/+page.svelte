@@ -16,8 +16,6 @@
     const submitName: SubmitFunction = () => {
         nameLoading = true;
         return ({result}) => {
-            console.log(result);
-            
             switch(result.type) {
                 case "failure":
                     store.push({ type: ToastType.error, message: result.data?.message, closeAfter: 2000 });

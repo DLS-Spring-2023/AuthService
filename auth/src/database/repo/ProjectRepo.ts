@@ -56,9 +56,6 @@ class ProjectRepo {
             conn.release();
         }
 
-        console.log(res);
-        
-
         return res;
     }
 

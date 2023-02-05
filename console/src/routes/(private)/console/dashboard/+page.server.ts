@@ -49,8 +49,6 @@ export const actions: Actions = {
         }
         
         const data = await response.json();
-        console.log(data);
-        
 
         throw redirect(302, `/console/project/${data.data.id}`);
     },
