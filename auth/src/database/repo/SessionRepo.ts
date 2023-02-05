@@ -79,6 +79,7 @@ class SessionRepo {
         const result = await conn.query(query, [session.id, session.session_id, session.account_id, nextIteration, expires]);
 
         conn.release();
+        
         return result
     }
 

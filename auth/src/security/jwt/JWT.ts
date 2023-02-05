@@ -6,7 +6,7 @@ import db from "../../database/DatabaseGateway.js";
 import { SessionTable } from "../../util/enums.js";
 import UserRepo from "../../database/repo/UserRepo.js";
 import JwtUtils from "./JwUtils.js";
-import { Account } from "../../util/interfaces.js";
+import { Account } from "../../database/entity/Account.js";
 
 interface IJWT {
     signAccessToken(account_id: string, session_id: bigint): Promise<string | null>;

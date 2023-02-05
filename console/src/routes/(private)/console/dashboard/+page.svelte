@@ -6,7 +6,6 @@
     const { projects } = $page.data;
 
     let showModal = false;
-    
 </script>
 
 <div class="w-full p-10 flex flex-wrap justify-between">

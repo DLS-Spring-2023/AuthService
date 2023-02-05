@@ -1,30 +1,14 @@
 <script lang="ts">
     import logo from "$lib/assets/logo.png";
     import { page } from '$app/stores';
-    import { slide } from 'svelte/transition'
     import ChevronDown from 'svelte-icons/fa/FaChevronDown.svelte'
     import ChevronUp from 'svelte-icons/fa/FaChevronUp.svelte'
 	import Avatar from "$lib/components/Avatar.svelte";
 	import { onMount } from "svelte";
     import toast, { ToastType } from '$lib/store/toast';
+	import NavDropdown from "$lib/components/NavDropdown.svelte";
 
     let showDropdown = false;
-
-    let theme = '';
-    if (typeof localStorage !== 'undefined') {
-        theme = localStorage.theme;
-    }
-    
-    const selectTheme = (t: string) => {
-        theme = t;
-        if (t === 'dark') {
-            document.documentElement.classList.add('dark')
-            localStorage.theme = t;
-        } else {
-            document.documentElement.classList.remove('dark')
-            localStorage.theme = t;
-        }
-    }
 
     // Display toasts
     onMount(() => {
@@ -49,7 +33,7 @@
     <div>
         <a href='/' class='flex items-center text-gray-900 dark:text-slate-100 ml-8'>
             <img src={logo} alt="logo" class="w-5 rounded-md"/>
-            <h4 class="ml-2 font-medium text-sky-300" style="font-size: 1.3em">{$page.data.platformName}</h4>
+            <h4 class="ml-2 font-medium text-indigo-500" style="font-size: 1.3em">{$page.data.platformName}</h4>
         </a>
     </div>
     
@@ -64,53 +48,12 @@
 
         <!-- Dropdown -->
         {#if showDropdown}
-            <div class="nav-dropdown" transition:slide={{duration: 150}}>
-                
-                <!-- Logout -->
-                <div>
-                    <form 
-                        class="flex items-center justify-center w-full h-full"
-                        action="/logout" method="post"
-                    >
-                        <input type="submit" class="logout-button" value="Logout">
-                    </form>
-                </div>
-
-                <!-- Select Theme -->
-                <div class="flex flex-col items-center py-6 border-top">
-                    <h3>Theme</h3>
-                    <div class="flex mt-2">
-                        <div class="flex flex-col items-center mr-4">
-                            <label for="light">Light</label>
-                            <input 
-                                on:change={() => selectTheme('light')} 
-                                class="hover:cursor-pointer"
-                                id="light" 
-                                type="radio" 
-                                name="theme" 
-                                value="light" 
-                                checked={theme === 'light'} 
-                            >
-                        </div>
-                        <div class="flex flex-col items-center ml-4">
-                            <label for="dark">Dark</label>
-                            <input 
-                                on:change={() => selectTheme('dark')} 
-                                class="hover:cursor-pointer"
-                                id="dark" 
-                                type="radio" 
-                                name="theme" 
-                                value="dark" 
-                                checked={theme === 'dark'} 
-                            >
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <NavDropdown onRequestClose={() => (showDropdown = false)}/>
         {/if}
     </div>
 
 </nav>
 
-<slot/>
-
+<div class="mt-16">
+    <slot/>
+</div>

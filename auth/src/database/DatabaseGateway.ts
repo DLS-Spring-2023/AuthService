@@ -2,12 +2,10 @@ import db, { Connection } from 'mariadb';
 import AccountRepo from './repo/AccountRepo.js';
 import path from 'path';
 import fs from 'fs';
-import { Settings } from '../util/interfaces.js';
 import { SessionTable } from '../util/enums.js';
 import SessionRepo from './repo/SessionRepo.js';
 import UserRepo from './repo/UserRepo.js';
 import ProjectRepo from './repo/ProjectRepo.js';
-import OrganizationRepo from './repo/OrganizationRepo.js';
 import SettingsRepo from './repo/SettingsRepo.js';
 
 class DatabaseGateway {
@@ -23,7 +21,6 @@ class DatabaseGateway {
 
     public readonly account = new AccountRepo(this.pool);
     public readonly accountSession = new SessionRepo(this.pool, SessionTable.ACCOUNT);
-    public readonly organization = new OrganizationRepo(this.pool);
     public readonly user = new UserRepo(this.pool);
     public readonly userSession = new SessionRepo(this.pool, SessionTable.USER);
     public readonly project = new ProjectRepo(this.pool);

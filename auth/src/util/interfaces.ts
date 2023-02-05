@@ -1,13 +1,12 @@
 // ===== Entities ===== //
-export interface Account {
-    id?: string;
-    name: string;
-    email: string;
-    password_hash: string;
-    created_at?: Date;
-    updated_at?: Date;
-    personal_org_id?: string;
-}
+// export interface Account {
+//     id?: string;
+//     name: string;
+//     email: string;
+//     password_hash: string;
+//     created_at?: Date;
+//     updated_at?: Date;
+// }
 
 export interface AccountSession {
     id: bigint;

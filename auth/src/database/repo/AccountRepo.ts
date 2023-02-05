@@ -1,8 +1,7 @@
 import { Pool } from "mariadb";
 import bcrypt from 'bcrypt';
-import { Account } from "../../util/interfaces.js";
 import Snowflake from "../../util/Snowflake.js";
-import { OrgRole } from "../../util/enums.js";
+import { Account } from "../entity/Account.js";
 
 class AccountRepo {
     private readonly db;
@@ -26,7 +25,7 @@ class AccountRepo {
     /**
      * findById
      */
-    public async findById(id: string) {
+    public async findById(id: string): Promise<Account> {
         const conn = await this.db.getConnection();
         
         const res = await conn.query(`SELECT * from account WHERE (id = ?);`, [id]);
@@ -53,7 +52,7 @@ class AccountRepo {
     public async insert(account: Account) {
         const conn = await this.db.getConnection();
 
-        const pass = await bcrypt.hash(account.password_hash, 12);
+        const pass = await bcrypt.hash(account.password_hash as string, 12);
         const id = Snowflake.nextHexId();
 
         const query = `INSERT INTO account (id, name, email, password_hash) VALUES (?, ?, ?, ?) RETURNING *;`;
@@ -68,8 +67,29 @@ class AccountRepo {
             conn.release();
         }
         
-        delete res[0].password_hash;
         return res[0];
+    }
+
+    /**
+     * update
+     */
+    public async update(account: Account) {
+        const conn = await this.db.getConnection();
+
+        const query = `UPDATE account SET name = ?, email = ?, password_hash = ?, enabled = ? WHERE (id = ?);`;
+        const prep = [account.name, account.email, account.password_hash, account.enabled, account.id];
+        
+        let res;
+        try {
+            await conn.query(query, prep);
+            res = { error: false };
+        } catch (err: any) {
+            res = { error: err.code };
+        } finally {
+            conn.release();
+        }
+       
+        return res;
     }
 
     /**
@@ -78,12 +98,8 @@ class AccountRepo {
     public async delete(account: Account) {
         const conn = await this.db.getConnection();
 
-        const query = `
-            DELETE FROM account WHERE (id = ?);
-            DELETE FROM organization WHERE (id = ?);
-        `;
-        
-        const prep = [account.id, account.personal_org_id]
+        const query = `DELETE FROM account WHERE (id = ?);`;
+        const prep = [account.id]
 
         const res = await conn.query(query, prep);
         conn.release();

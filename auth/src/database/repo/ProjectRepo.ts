@@ -1,5 +1,6 @@
 import { Pool } from "mariadb";
 import Snowflake from "../../util/Snowflake.js";
+import { Project } from "../entity/Project.js";
 
 class ProjectRepo {
     private readonly db;
@@ -11,7 +12,7 @@ class ProjectRepo {
     /**
      * findById
      */
-    public async findById(id: string) {
+    public async findById(id: string): Promise<Project | undefined> {
         const conn = await this.db.getConnection();
         
         const res = await conn.query(`SELECT * from project WHERE (id = ?) LIMIT 1;`, [id]);
@@ -23,7 +24,7 @@ class ProjectRepo {
     /**
      * findByOrgId
      */
-    public async findByAccountId(id: string) {
+    public async findByAccountId(id: string): Promise<Project | undefined> {
         const conn = await this.db.getConnection();
         
         const res = await conn.query(`SELECT * from project WHERE (account_id = ?);`, [id]);
@@ -50,7 +51,7 @@ class ProjectRepo {
             const result = await conn.query(query, prep);
             res = result[0]
         } catch (err: any) {
-            res = [{ error: err.code }];
+            res = { error: err.code };
         } finally {
             conn.release();
         }
@@ -58,6 +59,43 @@ class ProjectRepo {
         console.log(res);
         
 
+        return res;
+    }
+
+    /**
+     * update
+     */
+    public async update(project: Project) {
+        const conn = await this.db.getConnection();
+
+        const query = `UPDATE project SET name = ? WHERE (id = ?);`;
+        const prep = [project.name, project.id];
+        
+        let res;
+        try {
+            await conn.query(query, prep);
+            res = { error: false };
+        } catch (err: any) {
+            res = { error: err.code };
+        } finally {
+            conn.release();
+        }
+       
+        return res;
+    }
+
+    /**
+     * delete
+     */
+    public async delete(project: Project) {
+        const conn = await this.db.getConnection();
+
+        const query = `DELETE FROM project WHERE (id = ?);`;
+        const prep = [project.id]
+
+        const res = await conn.query(query, prep);
+        conn.release();
+        
         return res;
     }
 

@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import v1AccountRouter from './private/AccountRouter.js';
-import v1ProjectRouter from './private/ProjectRouter.js';
+import v1AccountRouter from './protected/AccountRouter.js';
+import v1ProjectRouter from './protected/ProjectRouter.js';
 
 const router = Router();
 

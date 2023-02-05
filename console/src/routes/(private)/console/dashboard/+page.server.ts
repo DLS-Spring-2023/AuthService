@@ -1,5 +1,5 @@
 import type { PageServerLoad } from "./$types";
-import { error, fail, type Actions } from "@sveltejs/kit";
+import { error, fail, redirect, type Actions } from "@sveltejs/kit";
 import { AUTH_TARGET } from "$env/static/private";
 import Zod from '$lib/server/utils/zod/Zod';
 
@@ -48,6 +48,10 @@ export const actions: Actions = {
             return fail(response.status, { message: response.statusText }); 
         }
         
-        return { data: await response.json()}
+        const data = await response.json();
+        console.log(data);
+        
+
+        throw redirect(302, `/console/project/${data.data.id}`);
     },
 };

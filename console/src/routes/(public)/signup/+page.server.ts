@@ -32,6 +32,7 @@ export const actions: Actions = {
         });
 
         const data = await response.json();
+        
         if (!response.ok) {
             return fail(data.code, { error: true, message: data.message });
         }

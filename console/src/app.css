@@ -9,13 +9,13 @@
     }
 
     nav {
-        @apply flex justify-between items-center h-16 border-bottom;
+        @apply fixed top-0 w-full flex justify-between items-center h-16 border-bottom z-10;
+        @apply bg-light dark:bg-dark
         /* border-bottom: 0.5px solid theme(colors[border]);  */
     }
 
     a {
         @apply transition ease-linear duration-75;
-        @apply text-gray-600 dark:text-gray-400;
         @apply hover:cursor-pointer hover:text-gray-900 dark:hover:text-slate-100
     }
 
@@ -31,11 +31,8 @@
         font-size: theme(fontSize.2xl);
     }
 
-    input {
-        @apply transition ease-linear duration-75;
-        @apply bg-light dark:bg-dark;
-        @apply p-2;
-        @apply border border-solid border-slate-500 rounded-md;
+    h4 {
+        font-size: theme(fontSize.xl);
     }
 }
 
@@ -91,8 +88,13 @@
         @apply hover:text-gray-50 hover:cursor-pointer;
     }
 
+    .sidebar {
+        @apply fixed top-16 border-right p-6;
+        width: 200px;
+        height: calc(100vh - 64px);
+    }
+
     .spinner {
-        @apply w-fit h-full py-2;
         @apply animate-spin;
     }
 

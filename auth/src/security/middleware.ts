@@ -16,8 +16,8 @@ export const authenticateAccount = async (req: Request, res: Response, next: Nex
             sessionToken,
             user: {
                 id: verifiedAccess.account.id, 
-                name: verifiedAccess.account.name, 
-                email: verifiedAccess.account.email,
+                name: verifiedAccess.account.name as string, 
+                email: verifiedAccess.account.email as string,
             }
         };
         next();
@@ -35,10 +35,27 @@ export const authenticateAccount = async (req: Request, res: Response, next: Nex
             didTokensRefresh: true,
             user: {
                 id: verifiedSession.account.id, 
-                name: verifiedSession.account.name, 
-                email: verifiedSession.account.email, 
+                name: verifiedSession.account.name as string, 
+                email: verifiedSession.account.email as string, 
             }
         };
+
+        res.cookie('account_access_token', accessToken, {
+            maxAge: 1000 * 60 * 15 - 10,
+            httpOnly: true,
+            secure: false, // TODO
+            path: '/',
+            sameSite: 'lax'
+        });
+    
+        res.cookie('account_session_token', verifiedSession.token, {
+            maxAge: 1000 * 60 * 60 * 24 * 365 - 1000 * 10,
+            httpOnly: true,
+            secure: false, // TODO
+            path: '/',
+            sameSite: 'lax'
+        });
+
         next();
     } else {
         res.status(401).send({ code: 401, message: "Unauthorized" });

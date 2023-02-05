@@ -10,7 +10,7 @@
     {#if data}
         <a href="/console/project/{data.id}" class="w-full h-full text-slate-100">
             <div class="relative w-full h-full flex pt-8 pl-8">
-                <p>{data.name}</p>
+                <h3 class="text-lg">{data.name}</h3>
             </div>
         </a>
     {:else}

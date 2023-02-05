@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import db from '../../../database/DatabaseGateway.js';
 import { AccountJWT } from '../../../security/jwt/JWT.js';
 import { DbError } from '../../../util/enums.js';
+import { Account } from '../../../database/entity/Account.js';
 
 const router = Router();
 
@@ -32,7 +33,7 @@ router.post('/create', async (req, res, next) => {
         return;
     }
     
-    const account = await db.account.insert({ name, email: email.toLowerCase(), password_hash: password });
+    const account = await db.account.insert({ name, email: email.toLowerCase(), password_hash: password } as Account);
     
     // Test for insert error
     if (account.error && account.error === DbError.DUP_ENTRY) {
