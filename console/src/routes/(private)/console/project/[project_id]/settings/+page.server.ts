@@ -18,7 +18,7 @@ export const actions: Actions = {
             return fail(400, { message: "Name cannot be longer than 64 characters" });
         }
 
-        const response = await fetch(AUTH_TARGET + `/project/update/${project_id}`, {
+        const response = await fetch(AUTH_TARGET + `/project/${project_id}`, {
             method: 'PUT',
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

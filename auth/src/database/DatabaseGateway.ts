@@ -7,6 +7,7 @@ import SessionRepo from './repo/SessionRepo.js';
 import UserRepo from './repo/UserRepo.js';
 import ProjectRepo from './repo/ProjectRepo.js';
 import SettingsRepo from './repo/SettingsRepo.js';
+import KeystoreRepo from './repo/KeystoreRepo.js';
 
 class DatabaseGateway {
     private readonly pool = db.createPool({
@@ -25,6 +26,7 @@ class DatabaseGateway {
     public readonly userSession = new SessionRepo(this.pool, SessionTable.USER);
     public readonly project = new ProjectRepo(this.pool);
     public readonly serverSettings = new SettingsRepo(this.pool);
+    public readonly keystore = new KeystoreRepo(this.pool);
 
     // Initialize Database
     // Does not catch errors as we want the server to crash in case initialization failed!

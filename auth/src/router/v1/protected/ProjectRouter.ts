@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import db from '../../../database/DatabaseGateway.js';
 import { Project } from '../../../database/entity/Project.js';
+import RSA from '../../../security/keygen/RSA.js';
 
 const router = Router();
 
@@ -10,8 +11,32 @@ router.post('/', async (req, res) => {
     res.send({ data: projects });
 });
 
-// Get project by id (/v1/project/get/:id)
-router.post('/get/:id', async (req, res) => {
+// Create new project (/v1/project/create)
+router.post('/create', async (req, res) => {
+    const { name } = req.body;
+
+    if (!name || typeof name !== "string") {
+        res.status(400).send({ code: 400, message: "Bad Request" });
+        return;
+    }
+
+    const project = await db.project.create(name, req.auth.user.id);
+   
+    // Test for create error
+    if (!(project instanceof Project) || !project.id) {
+        res.status(500).send({ code: 500, message: "Internal Error" });
+        return;
+    }
+
+    const key = new RSA(project.id);
+    key.generate();
+    await key.save();
+
+    res.send({...req.auth, data: project});
+});
+
+// Get project by id (/v1/project/:id/get)
+router.post('/:id/get', async (req, res) => {
     const project = await db.project.findById(req.params.id);
     
     if (!project) {
@@ -27,27 +52,9 @@ router.post('/get/:id', async (req, res) => {
     res.send(project);
 });
 
-// Create new project (/v1/project/create)
-router.post('/create', async (req, res) => {
-    const { name } = req.body;
 
-    if (!name || typeof name !== "string") {
-        res.status(400).send({ code: 400, message: "Bad Request" });
-        return;
-    }
-
-    const project = await db.project.create(name, req.auth.user.id);
-
-    // Test for create error
-    if (!project || project.error) {
-        res.status(500).send({ code: 500, message: "Internal Error" });
-        return;
-    }
-
-    res.send({...req.auth, data: project});
-});
-
-router.put('/update/:id', async (req, res) => {
+// Update project (/v1/project/:id)
+router.put('/:id', async (req, res) => {
 
     const projectData = req.body.project as Project;
 
@@ -73,7 +80,7 @@ router.put('/update/:id', async (req, res) => {
     const result = await db.project.update(project);
 
     // Test for insert error
-    if (!result || result.error) {
+    if (!result || (typeof result !== "boolean" && result.error)) {
         res.status(500).send({ code: 500, message: "Internal Error" });
         return;
     }
@@ -81,6 +88,8 @@ router.put('/update/:id', async (req, res) => {
     res.send({...req.auth })
 });
 
+
+// Delete project (/v1/project/:id)
 router.delete('/:id', async (req, res) => {
 
     const project = await db.project.findById(req.params.id);
@@ -95,7 +104,13 @@ router.delete('/:id', async (req, res) => {
         return;
     }
 
-    await db.project.delete(project);
+    const success = await db.project.delete(project);
+
+    const keystore = new RSA(project.id as string);
+    keystore.deleteKey();
+
+    const status = success ? 204 : 500;
+    const body = success ? { code: status, message: 'success' } : { code: status, message: 'operation failed' };
     res.send({...req.auth });
 });
 

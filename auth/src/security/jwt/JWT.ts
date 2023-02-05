@@ -7,11 +7,12 @@ import { SessionTable } from "../../util/enums.js";
 import UserRepo from "../../database/repo/UserRepo.js";
 import JwtUtils from "./JwUtils.js";
 import { Account } from "../../database/entity/Account.js";
+import { User } from "../../database/entity/User.js";
 
 interface IJWT {
     signAccessToken(account_id: string, session_id: bigint): Promise<string | null>;
     signNewSessionToken(account_id: string): Promise<{token: string, session_id: bigint}| null>;
-    verifyAccessToken(token: string): Promise<{session_id: bigint, account: Account} | null>;
+    verifyAccessToken(token: string): Promise<{session_id: bigint, account: Account | User} | null>;
     // renewSessionToken(account_id: string, session: bigint): Promise<string | null>;
     // verifySessionToken(token: string): Promise<{session_id: bigint, account_id: string} | null>;
     // decodeToken(token: string): JwtPayload;
@@ -52,8 +53,8 @@ class JWT extends JwtUtils implements IJWT {
             jwt.sign(payload, JWT.privateSessionKey, { ...JWT.sessionTokenSignOptions, subject: account_id}, async (error, encoded) => {
                 if (error || !encoded) accept(null);
                 else {
-                    await this.sessionRepo.startNewSession({ id, session_id: session_id, account_id: account_id });
-                    accept({token: encoded, session_id: session_id});
+                    const success = await this.sessionRepo.startNewSession({ id, session_id: session_id, account_id: account_id });
+                    accept(success ? {token: encoded, session_id: session_id} : null);
                 }
             });
         });
@@ -75,7 +76,7 @@ class JWT extends JwtUtils implements IJWT {
     }
 
     public verifyAccessToken(token: string) {
-        return new Promise<{session_id: bigint, account: Account} | null>((accept) => {
+        return new Promise<{session_id: bigint, account: Account | User} | null>((accept) => {
             jwt.verify(token, JWT.publicAccessKey, JWT.accessTokenVerifyOptions, async (error, decoded) => {
                 if (error) {
                     accept(null);
@@ -107,7 +108,7 @@ class JWT extends JwtUtils implements IJWT {
     }
 
     private verifySessionToken(token: string) {
-        return new Promise<{session_id: bigint, account: Account} | null>((accept) => {
+        return new Promise<{session_id: bigint, account: Account | User} | null>((accept) => {
             jwt.verify(token, JWT.publicSessionKey, JWT.sessionTokenVerifyOptions, async (error, decoded) => {
                 if (error) {
                     console.error("RefreshToken:", "VerifyError -", error)
@@ -152,7 +153,7 @@ class JWT extends JwtUtils implements IJWT {
     /**
      * Verifies, invalidates and renews session
      */
-    public async validateAndRenewSession(token: string): Promise<{ token: string, account: Account, session_id: bigint } | null> {
+    public async validateAndRenewSession(token: string): Promise<{ token: string, account: Account | User, session_id: bigint } | null> {
         const verified = await this.verifySessionToken(token);
         if (!verified || !verified.account.id) return null;
 

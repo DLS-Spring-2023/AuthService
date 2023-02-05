@@ -8,10 +8,10 @@
             "server": "localhost",
             "port": 3306,
             "driver": "MariaDB",
-            "name": "JazzyBase",
-            "username": "root",
+            "name": "jAuth",
+            "username": "jauth_user",
             "password": "jenkins69",
-            "database": "jazzybase"
+            "database": "jauth"
         }
     ]
 }

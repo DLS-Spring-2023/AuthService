@@ -1,7 +1,7 @@
 import { Pool } from "mariadb";
 import bcrypt from 'bcrypt';
-import { User } from "../../util/interfaces.js";
 import Snowflake from "../../util/Snowflake.js";
+import { User } from "../entity/User.js";
 
 class UserRepo {
     private readonly db;
@@ -13,7 +13,7 @@ class UserRepo {
     /**
      * findById
      */
-    public async findById(id: string) {
+    public async findById(id: string): Promise<User | undefined> {
         const conn = await this.db.getConnection();
         
         const res = await conn.query(`SELECT * from user WHERE (id = ?);`, [id]);
@@ -25,7 +25,7 @@ class UserRepo {
     /**
      * findByEmail
      */
-    public async findByEmail(email: string) {
+    public async findByEmail(email: string): Promise<User | undefined> {
         const conn = await this.db.getConnection();
         
         const res = await conn.query("SELECT * from user WHERE (email = ?);", [email]);
@@ -37,12 +37,12 @@ class UserRepo {
     /**
      * create
      */
-    public async create(user: User) {
+    public async create(user: User): Promise<User | { error: string }> {
         const conn = await this.db.getConnection();
 
-        const pass = await bcrypt.hash(user.password_hash, 12);
+        const pass = await bcrypt.hash(user.password_hash as string, 12);
 
-        const query = "INSERT INTO user (id, project_id, name, email, password_hash) VALUE (?, ?, ?, ?)";
+        const query = "INSERT INTO user (id, project_id, name, email, password_hash) VALUE (?, ?, ?, ?) RETURNING *;";
         const prepared  = [Snowflake.nextHexId(), user.project_id, user.name, user.email, pass ];
 
         let res;
@@ -60,13 +60,14 @@ class UserRepo {
     /**
      * delete
      */
-    public async delete(id: string) {
+    public async delete(id: string): Promise<boolean> {
         const conn = await this.db.getConnection();
         
         const res = await conn.query("DELETE FROM user WHERE (id = ?)", [id]);
         conn.release();
         
-        return res;
+        const { affectedRows } = Object.getOwnPropertyDescriptors(res);
+        return affectedRows.value === 1; // if true, success
     }
 }
 

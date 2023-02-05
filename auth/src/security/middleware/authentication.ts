@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { AccountJWT } from "./jwt/JWT.js";
+import { AccountJWT } from "../jwt/JWT.js";
 
 export const authenticateAccount = async (req: Request, res: Response, next: NextFunction) => {
     let accessToken  = req.cookies.account_access_token;

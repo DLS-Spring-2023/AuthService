@@ -1,6 +1,7 @@
 import { Pool } from "mariadb";
-import { SessionTable } from "../../util/enums";
-import { AccountSession } from "../../util/interfaces";
+import { SessionTable } from "../../util/enums.js";
+import { AccountSession } from "../entity/AccountSession.js";
+import { UserSession } from "../entity/UserSession.js";
 
 class SessionRepo {
     private readonly db;
@@ -14,7 +15,7 @@ class SessionRepo {
     /**
      * findById
      */
-    public async findById(id: bigint) {
+    public async findById(id: bigint): Promise<AccountSession | UserSession | undefined> {
         const conn = await this.db.getConnection();
 
         const result = await conn.query(`SELECT * FROM ${this.table}_session WHERE (id = ?) LIMIT 1;`, [id]);
@@ -26,7 +27,7 @@ class SessionRepo {
     /**
      * findValidBySessionId
      */
-    public async findValidBySessionId(session_id: bigint) {
+    public async findValidBySessionId(session_id: bigint): Promise<AccountSession | UserSession | undefined> {
         const conn = await this.db.getConnection();
 
         const result = await conn.query(`SELECT * FROM ${this.table}_session WHERE (session_id = ?) AND (valid = 1) LIMIT 1;`, [session_id]);
@@ -38,23 +39,25 @@ class SessionRepo {
     /**
      * save
      */
-    public async startNewSession(session: AccountSession) {
+    public async startNewSession(session: AccountSession | UserSession): Promise<boolean> {
         const conn = await this.db.getConnection();
 
         const expires = new Date(Date.now() + (1000 * 60 * 60 * 24 * 365) - (1000 * 60)); // one year minus a minute
 
         const query = `INSERT INTO ${this.table}_session (id, session_id, ${this.table}_id, expires) VALUES (?, ?, ?, ?)`;
         const prep = [session.id, session.session_id, session.account_id, expires];
-        const result = await conn.query(query, prep);
+        const res = await conn.query(query, prep);
         
         conn.release();
-        return result;
+
+        const { affectedRows } = Object.getOwnPropertyDescriptors(res);
+        return affectedRows.value === 1; // if true, success
     }
 
     /**
      * renewSession
      */
-    public async renewSession(session: AccountSession) {
+    public async renewSession(session: AccountSession | UserSession): Promise<boolean> {
         const conn = await this.db.getConnection();
 
         // Find last valid session iteration
@@ -64,8 +67,8 @@ class SessionRepo {
         // Kill session if no valid iteration is found and return
         const maxIteration = lastIteration[0]['MAX(iteration)'];
         if (!maxIteration) {
-            this.killSession(session.session_id);
-            return null;
+            this.killSession(session.session_id as bigint);
+            return false;
         };
 
         // Invalidate earlier iterations
@@ -76,11 +79,12 @@ class SessionRepo {
         query = `INSERT INTO ${this.table}_session (id, session_id, ${this.table}_id, iteration, expires) VALUES (?, ?, ?, ?, ?)`;
         const expires = new Date(Date.now() + (1000 * 60 * 60 * 24 * 365) - (1000 * 60)); // one year minus a minute
         const nextIteration = maxIteration + 1;
-        const result = await conn.query(query, [session.id, session.session_id, session.account_id, nextIteration, expires]);
+        const res = await conn.query(query, [session.id, session.session_id, session.account_id, nextIteration, expires]);
 
         conn.release();
         
-        return result
+        const { affectedRows } = Object.getOwnPropertyDescriptors(res);
+        return affectedRows.value === 1; // if true, success
     }
 
     /**
@@ -89,9 +93,11 @@ class SessionRepo {
     public async killSession(session_id: bigint) {
         const conn = await this.db.getConnection();
 
-        const result = await conn.query(`DELETE FROM ${this.table}_session WHERE (session_id = ?)`, [session_id]);
+        const res = await conn.query(`DELETE FROM ${this.table}_session WHERE (session_id = ?)`, [session_id]);
         conn.release();
-        return result;
+        
+        const { affectedRows } = Object.getOwnPropertyDescriptors(res);
+        return affectedRows.value === 1; // if true, success
     }
 
     /**

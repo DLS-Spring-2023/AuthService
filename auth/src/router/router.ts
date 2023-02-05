@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import v1PublicRoutes from './v1/public-routes.js';
 import v1ProtectedRoutes from './v1/protected-routes.js';
-import { authenticateAccount } from '../security/middleware.js';
+import { authenticateAccount } from '../security/middleware/authentication.js';
 
 const router = Router();
 

@@ -36,15 +36,16 @@ router.post('/create', async (req, res, next) => {
     const account = await db.account.insert({ name, email: email.toLowerCase(), password_hash: password } as Account);
     
     // Test for insert error
-    if (account.error && account.error === DbError.DUP_ENTRY) {
+    if (!(account instanceof Account) && account.error && account.error === DbError.DUP_ENTRY) {
         res.status(409).send({ code: 409, message: "Email already in use" });
         return;
-    } else if (!account || account.error) {
+    } else if (!account || (!(account instanceof Account) && account.error)) {
         res.status(500).send({ code: 500, message: "Internal Error" });
         return;
     }
     
     req.body.account = account;
+    res.status(201);
     next();
 
 }, login);
@@ -64,12 +65,13 @@ router.post('/login', async (req, res, next) => {
     const account = await db.account.findByEmail(email.toLowerCase());
     
     // Check for valid email and password
-    if (!account || !await bcrypt.compare(password, account.password_hash)) {
+    if (!account || !await bcrypt.compare(password, account.password_hash || '')) {
         res.status(401).send({ code: 401, message: "Email or password is incorrect" });
         return;
     }
 
     req.body.account = account;
+    res.status(200);
     next();
 
 }, login);
@@ -103,7 +105,7 @@ async function login (req: Request, res: Response) {
     });
 
     // Response
-    res.status(201).send({
+    res.send({
         accessToken: accessToken,
         sessionToken: session.token
     });

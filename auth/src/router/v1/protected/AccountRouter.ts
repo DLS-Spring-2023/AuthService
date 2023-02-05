@@ -24,6 +24,10 @@ router.put('/update', async (req, res) => {
     }
 
     const account = await db.account.findById(req.auth.user.id);
+    if (!account) {
+        res.status(404).send({ code: 404, message: "Not Found" });
+        return;
+    }
     
     if (parsedData.name) account.name = name;
     if (parsedData.email) account.email = email;
@@ -40,10 +44,10 @@ router.put('/update', async (req, res) => {
     const result = await db.account.update(account);
 
     // Test for insert error
-    if (result.error && result.error === DbError.DUP_ENTRY) {
+    if (typeof result !== "boolean" && result.error && result.error === DbError.DUP_ENTRY) {
         res.status(409).send({ code: 409, message: "Email already in use" });
         return;
-    } else if (!result || result.error) {
+    } else if (!result || typeof result !== "boolean") {
         res.status(500).send({ code: 500, message: "Internal Error" });
         return;
     }
@@ -58,13 +62,17 @@ router.post('/logout', async (req, res) => {
     const { sessionToken } = req.auth;
 
     const decoded = JwtUtils.decodeToken(sessionToken);
-    db.accountSession.killSession(decoded.session_id);
+    await db.accountSession.killSession(decoded.session_id);
     res.status(204).send();
 });
 
+
+// Delete account (/v1/account)
 router.delete('/', async (req, res) => {
-    await db.account.delete({ id: req.auth.user.id } as Account);
-    res.status(204).send();
+    const success = await db.account.delete({ id: req.auth.user.id } as Account);
+    const status = success ? 204 : 500;
+    const body = success ? { code: status, message: 'success' } : { code: status, message: 'operation failed' };
+    res.status(status).send(body);
 })
 
 export default router;

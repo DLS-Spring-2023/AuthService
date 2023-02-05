@@ -38,7 +38,7 @@ class ProjectRepo {
     /**
      * create
      */
-    public async create(name: string, account_id: string) {
+    public async create(name: string, account_id: string): Promise<Project | { error: string }> {
         const conn = await this.db.getConnection();
 
         const id = Snowflake.nextHexId();
@@ -55,14 +55,14 @@ class ProjectRepo {
         } finally {
             conn.release();
         }
-
-        return res;
+        
+        return res ? new Project(res) : res;
     }
 
     /**
      * update
      */
-    public async update(project: Project) {
+    public async update(project: Project): Promise<boolean | { error: string }> {
         const conn = await this.db.getConnection();
 
         const query = `UPDATE project SET name = ? WHERE (id = ?);`;
@@ -70,21 +70,21 @@ class ProjectRepo {
         
         let res;
         try {
-            await conn.query(query, prep);
-            res = { error: false };
+            res = await conn.query(query, prep);
         } catch (err: any) {
             res = { error: err.code };
         } finally {
             conn.release();
         }
-       
-        return res;
+
+        const { affectedRows } = Object.getOwnPropertyDescriptors(res);
+        return affectedRows.value === 1; // if true, success
     }
 
     /**
      * delete
      */
-    public async delete(project: Project) {
+    public async delete(project: Project): Promise<boolean> {
         const conn = await this.db.getConnection();
 
         const query = `DELETE FROM project WHERE (id = ?);`;
@@ -92,8 +92,9 @@ class ProjectRepo {
 
         const res = await conn.query(query, prep);
         conn.release();
-        
-        return res;
+
+        const { affectedRows } = Object.getOwnPropertyDescriptors(res);
+        return affectedRows.value === 1; // if true, success
     }
 
 }

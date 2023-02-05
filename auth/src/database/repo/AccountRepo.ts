@@ -13,7 +13,7 @@ class AccountRepo {
     /**
      * count
      */
-    public async count() {
+    public async count(): Promise<bigint> {
         const conn = await this.db.getConnection();
         
         const res = await conn.query(`SELECT COUNT(*) FROM account;`);
@@ -25,7 +25,7 @@ class AccountRepo {
     /**
      * findById
      */
-    public async findById(id: string): Promise<Account> {
+    public async findById(id: string): Promise<Account | undefined> {
         const conn = await this.db.getConnection();
         
         const res = await conn.query(`SELECT * from account WHERE (id = ?);`, [id]);
@@ -37,7 +37,7 @@ class AccountRepo {
     /**
      * findByEmail
      */
-    public async findByEmail(email: string) {
+    public async findByEmail(email: string): Promise<Account | undefined> {
         const conn = await this.db.getConnection();
         
         const res = await conn.query("SELECT * from account WHERE (email = ?);", [email]);
@@ -49,7 +49,7 @@ class AccountRepo {
     /**
      * insert
      */
-    public async insert(account: Account) {
+    public async insert(account: Account): Promise<Account | { error: string }> {
         const conn = await this.db.getConnection();
 
         const pass = await bcrypt.hash(account.password_hash as string, 12);
@@ -60,20 +60,21 @@ class AccountRepo {
         
         let res;
         try {
-            res = await conn.query(query, prep);
+            const result = await conn.query(query, prep);
+            res = result[0] ? new Account(result[0]) : result[0]
         } catch (err: any) {
             res = [{ error: err.code }];
         } finally {
             conn.release();
         }
         
-        return res[0];
+        return res;
     }
 
     /**
      * update
      */
-    public async update(account: Account) {
+    public async update(account: Account): Promise<boolean | { error: string }> {
         const conn = await this.db.getConnection();
 
         const query = `UPDATE account SET name = ?, email = ?, password_hash = ?, enabled = ? WHERE (id = ?);`;
@@ -81,21 +82,21 @@ class AccountRepo {
         
         let res;
         try {
-            await conn.query(query, prep);
-            res = { error: false };
+            res = await conn.query(query, prep);
         } catch (err: any) {
             res = { error: err.code };
         } finally {
             conn.release();
         }
-       
-        return res;
+
+        const { affectedRows } = Object.getOwnPropertyDescriptors(res);
+        return affectedRows.value === 1; // if true, success
     }
 
     /**
      * delete
      */
-    public async delete(account: Account) {
+    public async delete(account: Account): Promise<boolean> {
         const conn = await this.db.getConnection();
 
         const query = `DELETE FROM account WHERE (id = ?);`;
@@ -104,7 +105,8 @@ class AccountRepo {
         const res = await conn.query(query, prep);
         conn.release();
         
-        return res;
+        const { affectedRows } = Object.getOwnPropertyDescriptors(res);
+        return affectedRows.value === 1; // if true, success
     }
 }
 
