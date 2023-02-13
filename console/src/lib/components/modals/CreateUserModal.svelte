@@ -6,7 +6,7 @@
 	import SubmitButton from '../buttons/SubmitButton.svelte';
 	import CancelButton from '../buttons/CancelButton.svelte';
 	import Input from '../Input.svelte';
-	import { invalidateAll } from '$app/navigation';
+	import { invalidate } from '$app/navigation';
 
     export let onRequestClose: () => void;
 
@@ -19,8 +19,8 @@
             switch(result.type) {
                 case "success":
                     store.push({type: ToastType.success, message: "User successfully created", closeAfter: 2000})
+                    invalidate((url) => url.pathname === `/v1/project/${$page.data.project.id}/users`);
                     onRequestClose();
-                    invalidateAll()
                     break;
                 case "failure":
                     result.data?.message 

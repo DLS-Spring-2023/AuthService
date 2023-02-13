@@ -21,12 +21,14 @@
             <p class="my-4">JOINED</p>
             <span class="col-span-5 border-top"></span>
             {#each users as user, index}
-                <a href={`/console/project/${$page.params.project_id}/auth`} class="contents">
-                    <div class="pl-6 py-4">{user.name}</div>
-                    <div class="py-4">{user.email}</div>
-                    <div class="py-4">{user.verified ? 'verified' : 'not verified'}</div>
-                    <div class="py-4">{user.id}</div>
-                    <div class="py-4">{new Date(user.created_at).toLocaleDateString()}</div>
+                <a href={`/console/project/${$page.params.project_id}/auth/${user.id}`} 
+                    class="contents group"
+                >
+                    <div class="pl-6 py-4 bg-dark group-hover:brightness-150">{user.name}</div>
+                    <div class="py-4 bg-dark group-hover:brightness-150">{user.email}</div>
+                    <div class="py-4 bg-dark group-hover:brightness-150">{user.verified ? 'verified' : 'not verified'}</div>
+                    <div class="py-4 bg-dark group-hover:brightness-150">{user.id}</div>
+                    <div class="py-4 bg-dark group-hover:brightness-150">{new Date(user.created_at).toLocaleDateString()}</div>
                 </a>
                 {#if index < users.length - 1}
                     <span class="col-span-5 border-top"></span>

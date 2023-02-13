@@ -58,6 +58,11 @@ router.post('/login', async (req, res, next) => {
         return;
     }
 
+    if (!user.enabled) {
+        res.status(401).send({ code: 401, message: "User is banned" });
+        return;
+    }
+
     req.body.user = user;
     res.status(200);
     next();

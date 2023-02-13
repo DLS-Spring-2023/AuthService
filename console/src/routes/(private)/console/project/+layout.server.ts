@@ -5,7 +5,7 @@ import type { LayoutServerLoad } from './$types';
 export const load = (({ params, locals }) => {
 
     const fetchProject = async () => {
-        const response = await fetch(AUTH_TARGET + '/project/' + params.project_id + '/get', {
+        const response = await fetch(`${AUTH_TARGET}/project/${params.project_id}/get`, {
             method: 'POST',
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -18,7 +18,7 @@ export const load = (({ params, locals }) => {
             throw error(response.status, { message: data.message });
         }
         
-        return data;
+        return data.data;
     }
 
     return {

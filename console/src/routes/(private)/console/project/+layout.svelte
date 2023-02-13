@@ -5,7 +5,8 @@
     import Settings from 'svelte-icons/md/MdSettings.svelte';
 	import NavButton from '$lib/components/buttons/NavButton.svelte';
     import CreateUserModal from '$lib/components/modals/CreateUserModal.svelte';
-    import { createUserModal } from '$lib/store/modals';
+    import DeleteUserModal from '$lib/components/modals/DeleteUserModal.svelte';
+    import { createUserModal, deleteUserModal } from '$lib/store/modals';
 	import { onMount } from 'svelte';
 
     $: project = $page.data.project;
@@ -19,14 +20,19 @@
         case '/auth':
             title = 'Auth';
             break;
+        case `/auth/${$page.params.user_id}`:
+            title = $page.data.user.name;
+            break;
         default: 
             title = project.name;
     }
 
     // Modals
     let showCreateUserModal = false;
+    let showDeleteUserModal = false;
     onMount(() => {
         createUserModal.subscribe((value) => showCreateUserModal = value);
+        deleteUserModal.subscribe((value) => showDeleteUserModal = value);
     });
 </script>
 
@@ -56,4 +62,9 @@
 <!-- Only display from /project/[id]/auth -->
 {#if showCreateUserModal}
     <CreateUserModal onRequestClose={() => createUserModal.set(false)} />
+{/if}
+
+<!-- Only display from /project/[project_id]/auth/[user_id] -->
+{#if showDeleteUserModal}
+    <DeleteUserModal onRequestClose={() => deleteUserModal.set(false)} />
 {/if}

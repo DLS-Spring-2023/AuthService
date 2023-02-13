@@ -1,8 +1,11 @@
 import { Router } from 'express';
+import bcrypt from 'bcrypt';
 import db from '../../../database/DatabaseGateway.js';
 import { Project } from '../../../database/entity/Project.js';
 import RSA from '../../../security/keygen/RSA.js';
 import { authenticateAccount } from '../../../security/middleware/authentication.js';
+import BodyParser from '../../../util/BodyParser.js';
+import { DbError } from '../../../util/enums.js';
 
 const router = Router();
 
@@ -48,29 +51,8 @@ router.post('/:id/get', async (req, res) => {
         return;
     }
 
-    res.send(project);
+    res.send({...req.auth, data: project});
 });
-
-// Get project users (/v1/project/:id/users)
-router.post('/:id/users', async (req, res) => {
-    const project = await db.project.findById(req.params.id);
-
-    if (!project || !project.id) {
-        res.status(404).send({ code: 404, message: "Not Found" });
-        return;
-    }
-
-    if (project.account_id !== req.auth.user.id) {
-        res.status(401).send({ code: 401, message: "Unauthorized" });
-        return;
-    }
-
-    const users = await db.user.findByProjectId(project.id);
-    for (const user of users) delete user.password_hash;
-
-    res.send({ data: users });
-});
-
 
 // Update project (/v1/project/:id)
 router.put('/:id', async (req, res) => {
@@ -104,7 +86,7 @@ router.put('/:id', async (req, res) => {
         return;
     }
 
-    res.send({...req.auth })
+    res.send({ ...req.auth });
 });
 
 
@@ -130,7 +112,164 @@ router.delete('/:id', async (req, res) => {
 
     const status = success ? 204 : 500;
     const body = success ? { code: status, message: 'success' } : { code: status, message: 'operation failed' };
-    res.send({...req.auth });
+    res.send({ ...req.auth });
+});
+
+// ===== Project Users ===== //
+
+// Get project users (/v1/project/:id/users)
+router.post('/:id/users', async (req, res) => {
+    const project = await db.project.findById(req.params.id);
+
+    if (!project || !project.id) {
+        res.status(404).send({ code: 404, message: "Not Found" });
+        return;
+    }
+
+    if (project.account_id !== req.auth.user.id) {
+        res.status(401).send({ code: 401, message: "Unauthorized" });
+        return;
+    }
+
+    const users = await db.user.findByProjectId(project.id);
+    for (const user of users) delete user.password_hash;
+
+    res.send({ ...req.auth, data: users });
+});
+
+router.post('/:project_id/users/:user_id', async (req, res) => {
+    const project = await db.project.findById(req.params.project_id);
+
+    if (!project || !project.id) {
+        res.status(404).send({ code: 404, message: "Not Found" });
+        return;
+    }
+
+    if (project.account_id !== req.auth.user.id) {
+        res.status(401).send({ code: 401, message: "Unauthorized" });
+        return;
+    }
+
+    const user = await db.user.findById(req.params.user_id);
+
+    if (!user || !user.id) {
+        res.status(404).send({ code: 404, message: "Not Found" });
+        return;
+    }
+
+    delete user.password_hash;
+    res.send({ ...req.auth, data: user });
+});
+
+router.put('/:project_id/users/:user_id', async (req, res) => {
+
+    const project = await db.project.findById(req.params.project_id);
+    
+    if (!project || !project.id) {
+        res.status(404).send({ code: 404, message: "Not Found" });
+        return;
+    }
+
+    // Check if user is authorized to access project
+    if (project.account_id !== req.auth.user.id) {
+        res.status(401).send({ code: 401, message: "Unauthorized" });
+        return;
+    }
+    
+    const user = await db.user.findById(req.params.user_id);
+
+    if (!user || !user.id) {
+        res.status(404).send({ code: 404, message: "Not Found" });
+        return;
+    }
+
+    const userData = req.body.user;
+
+    if (!userData) {
+        res.status(400).send({ code: 400, message: "Bad Request" });
+        return;
+    }
+
+    // Update user data
+    if (userData.name) user.name = userData.name;
+    if (userData.email) user.email = userData.email;
+    if (userData.password) user.password_hash = await bcrypt.hash(userData.password, 12);
+    if (userData.enabled !== undefined) user.enabled = userData.enabled;
+    if (userData.verified !== undefined) user.verified = userData.verified;
+    
+
+    // Validate user name
+    if (userData.name && (typeof userData.name !== "string" || userData.name.length < 2)) {
+        res.status(400).send({ code: 400, message: "Name must be longer than 2 characters" });
+        return;
+    }
+
+    // Validate user email
+    if (userData.email) {
+        const result = BodyParser.parseEmail(userData.email);
+        if (result.error) {
+            console.log(result.message);
+            
+            res.status(400).send({ code: 400, message: result.message });
+            return;
+        }
+    }
+
+    // Validate user password
+    if (userData.password && (typeof userData.password !== "string" || userData.password.length < 6 || userData.password.length > 64)) {
+        res.status(400).send({ code: 400, message: "Password must be between 6 and 64 characters" });
+        return;
+    }
+
+    // Validate user enabled
+    if (userData.enabled && typeof userData.enabled !== "boolean") {
+        res.status(400).send({ code: 400, message: "Enabled must be a boolean" });
+        return;
+    }
+
+    // Validate user verified
+    if (userData.verified && typeof userData.verified !== "boolean") {
+        res.status(400).send({ code: 400, message: "Verified must be a boolean" });
+        return;
+    }
+
+    const result = await db.user.update(user);
+    
+    // Test for insert error
+    if (typeof result !== "boolean" && result.error && result.error === DbError.DUP_ENTRY) {
+        res.status(409).send({ code: 409, message: "Email already in use" });
+        return;
+    } else if (!result || typeof result !== "boolean") {
+        res.status(500).send({ code: 500, message: "Internal Error" });
+        return;
+    }
+
+    res.send({ ...req.auth });
+});
+
+router.delete('/:project_id/users/:user_id', async (req, res) => {
+    const project = await db.project.findById(req.params.project_id);
+
+    if (!project || !project.id) {
+        res.status(404).send({ code: 404, message: "Not Found" });
+        return;
+    }
+
+    if (project.account_id !== req.auth.user.id) {
+        res.status(401).send({ code: 401, message: "Unauthorized" });
+        return;
+    }
+
+    const user = await db.user.findById(req.params.user_id);
+
+    if (!user || !user.id) {
+        res.status(404).send({ code: 404, message: "Not Found" });
+        return;
+    }
+
+    const success = await db.user.delete(user.id);
+    const status = success ? 204 : 500;
+    res.status(status).send({ ...req.auth });
 });
 
 export default router;

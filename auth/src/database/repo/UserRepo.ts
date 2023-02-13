@@ -19,6 +19,11 @@ class UserRepo {
         const res = await conn.query(`SELECT * from user WHERE (id = ?);`, [id]);
         conn.release();
 
+        if (res[0]) {
+            res[0].enabled = res[0].enabled === 1;
+            res[0].verified = res[0].verified === 1;
+        }
+
         return res[0];
     }
 
@@ -31,6 +36,11 @@ class UserRepo {
         const res = await conn.query(`SELECT * from user WHERE (project_id = ?);`, [project_id]);
         conn.release();
 
+        for (const user of res) {
+            user.enabled = user.enabled === 1;
+            user.verified = user.verified === 1;
+        }
+
         return res;
     }
 
@@ -42,6 +52,11 @@ class UserRepo {
         
         const res = await conn.query("SELECT * from user WHERE (email = ?);", [email]);
         conn.release();
+
+        if (res[0]) {
+            res[0].enabled = res[0].enabled === 1;
+            res[0].verified = res[0].verified === 1;
+        }
 
         return res[0];
     }
@@ -66,7 +81,36 @@ class UserRepo {
             conn.release();
         }
 
+        if (res[0]) {
+            res[0].enabled = res[0].enabled === 1;
+            res[0].verified = res[0].verified === 1;
+        }
+
         return res[0];
+    }
+
+    /**
+     * update
+     */
+    public async update(user: User): Promise<boolean | { error: string }> {
+        const conn = await this.db.getConnection();
+
+        const query = "UPDATE user SET name = ?, email = ?, password_hash = ?, enabled = ?, verified = ? WHERE (id = ?);";
+        const prep = [user.name, user.email, user.password_hash, user.enabled, user.verified, user.id];
+
+        let res;
+        try {
+            res = await conn.query(query, prep);
+        } catch (err: any) {
+            console.log(err);
+            
+            return { error: err.code };
+        } finally {
+            conn.release();
+        }
+        
+        const { affectedRows } = Object.getOwnPropertyDescriptors(res);
+        return affectedRows.value === 1; // if true, success
     }
 
     /**

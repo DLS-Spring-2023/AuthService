@@ -7,22 +7,22 @@
 	import DeleteProjectModal from '$lib/components/modals/DeleteProjectModal .svelte';
 	import Input from '$lib/components/Input.svelte';
     import store, { ToastType } from '$lib/store/toast';
-    
-    let name = $page.data.project.name
 
     let showModal = false;
-
     let nameLoading = false;
+    
     const submitName: SubmitFunction = () => {
         nameLoading = true;
+
         return ({result}) => {
             switch(result.type) {
                 case "failure":
                     store.push({ type: ToastType.error, message: result.data?.message, closeAfter: 2000 });
                     break;
-                default: 
-                    store.push({ type: ToastType.success, message: "Successfully updated project name", closeAfter: 2000 });
+                case "success": 
                     invalidateAll();
+                    store.push({ type: ToastType.success, message: "Successfully updated project name", closeAfter: 2000 });
+                    break;
             }
             nameLoading = false;
         }
@@ -48,7 +48,7 @@
 
     <div class="bg-dark brightness-125 m-12 p-8 mt-10 flex flex-col justify-between rounded-2xl border-full">
         <div class="w-full flex justify-between items-center">
-            <h4 class="font-medium">Delete Project</h4>
+            <h4 class="font-medium text-red-600">Delete Project</h4>
             <DeleteButton type="button" onClick={() => showModal = true} w={20}>Delete</DeleteButton>
         </div>    
     </div>

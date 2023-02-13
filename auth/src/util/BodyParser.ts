@@ -25,6 +25,14 @@ class BodyParser extends ParserSchemas {
             return log;
         }
     }
+
+    parseEmail(email: string) {
+        try {
+            return { error: false, ...this.email.parse({email}) }
+        } catch (err: any) {
+            return { error: true, message: err.errors[0].message };
+        }
+    }
 }
 
 export default new BodyParser();

@@ -51,7 +51,7 @@ abstract class ParserSchemas {
             }
         });
 
-        protected readonly createUser = z
+    protected readonly createUser = z
         .object({
             name: z
                 .string(this.stringProps)
