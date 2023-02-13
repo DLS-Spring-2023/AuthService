@@ -1,14 +1,14 @@
 <script lang="ts">
+    import { page } from '$app/stores';
     import { enhance, type SubmitFunction } from '$app/forms';
     import ModalBase from "$lib/components/modals/ModalBase.svelte";
     import store, { ToastType } from '$lib/store/toast';
 	import SubmitButton from '../buttons/SubmitButton.svelte';
 	import CancelButton from '../buttons/CancelButton.svelte';
 	import Input from '../Input.svelte';
-	import { goto } from '$app/navigation';
+	import { invalidateAll } from '$app/navigation';
 
     export let onRequestClose: () => void;
-    // export let projects: any[];
 
     let loading = false;
         
@@ -17,10 +17,10 @@
 
         return ({result}) => {
             switch(result.type) {
-                case "redirect":
-                    store.push({type: ToastType.success, message: "Project successfully created", closeAfter: 2000})
+                case "success":
+                    store.push({type: ToastType.success, message: "User successfully created", closeAfter: 2000})
                     onRequestClose();
-                    goto(result.location);
+                    invalidateAll()
                     break;
                 case "failure":
                     result.data?.message 
@@ -36,11 +36,22 @@
 <ModalBase onRequestClose={loading ? () => {} : onRequestClose}>
     <div class="p-8 max-w-lg">
         <div class="flex justify-between">
-            <h3 class="mr-64">Create Project</h3>
+            <h3 class="mr-64">Create User</h3>
         </div>
         <form class="flex flex-col mt-8" method="post" use:enhance={submit}>
             <label for="name">Name</label>
             <Input id="name" name="name" placeholder="Name" disabled={loading} focus required/>
+
+            <label for="email" class="mt-4">Email</label>
+            <Input id="email" name="email" placeholder="email@example.com" disabled={loading} focus required/>
+            
+            <label for="password" class="mt-4">Password</label>
+            <Input id="password" name="password" placeholder="********" type="password" disabled={loading} focus required/>
+            
+            <label for="re_password" class="mt-4">Repeat Password</label>
+            <Input id="re_password" name="re_password" placeholder="********" type="password" disabled={loading} focus required/>
+
+            <input type="hidden" name="api_key" value={$page.data.project.api_key} />
 
             <div class="flex w-full justify-between mt-8">
                 <CancelButton w={20} disabled={loading} onClick={onRequestClose}>Cancel</CancelButton>

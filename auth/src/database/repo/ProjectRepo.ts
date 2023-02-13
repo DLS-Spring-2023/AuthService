@@ -36,6 +36,18 @@ class ProjectRepo {
     }
 
     /**
+     * findByAPIKey
+     */
+    public async findByAPIKey(API_KEY: string) {
+        const conn = await this.db.getConnection();
+        
+        const res = await conn.query(`SELECT * from project WHERE (API_KEY = ?) LIMIT 1;`, [API_KEY]);
+        conn.release();
+
+        return res[0];
+    }
+
+    /**
      * create
      */
     public async create(name: string, account_id: string): Promise<Project | { error: string }> {

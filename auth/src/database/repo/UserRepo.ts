@@ -23,6 +23,18 @@ class UserRepo {
     }
 
     /**
+     * findByProjectId
+     */
+    public async findByProjectId(project_id: string): Promise<User[]> {
+        const conn = await this.db.getConnection();
+        
+        const res = await conn.query(`SELECT * from user WHERE (project_id = ?);`, [project_id]);
+        conn.release();
+
+        return res;
+    }
+
+    /**
      * findByEmail
      */
     public async findByEmail(email: string): Promise<User | undefined> {
@@ -40,11 +52,11 @@ class UserRepo {
     public async create(user: User): Promise<User | { error: string }> {
         const conn = await this.db.getConnection();
 
-        const pass = await bcrypt.hash(user.password_hash as string, 12);
+        user.password_hash = await bcrypt.hash(user.password_hash as string, 12);
 
-        const query = "INSERT INTO user (id, project_id, name, email, password_hash) VALUE (?, ?, ?, ?) RETURNING *;";
-        const prepared  = [Snowflake.nextHexId(), user.project_id, user.name, user.email, pass ];
-
+        const query = "INSERT INTO user (id, project_id, name, email, password_hash) VALUES (?, ?, ?, ?, ?) RETURNING *;";
+        const prepared  = [Snowflake.nextHexId(), user.project_id, user.name, user.email, user.password_hash];
+        
         let res;
         try {
             res = await conn.query(query, prepared);

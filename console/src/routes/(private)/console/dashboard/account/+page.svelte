@@ -4,7 +4,7 @@
 	import DeleteButton from '$lib/components/buttons/DeleteButton.svelte';
 	import SubmitButton from '$lib/components/buttons/SubmitButton.svelte';
 	import DeleteAccountModal from '$lib/components/modals/DeleteAccountModal.svelte';
-	import Input from '$lib/components/modals/Input.svelte';
+	import Input from '$lib/components/Input.svelte';
 	import toast, { ToastType } from '$lib/store/toast';
 	import { onMount } from 'svelte';
 

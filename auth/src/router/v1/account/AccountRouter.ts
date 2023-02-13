@@ -5,12 +5,86 @@ import JwtUtils from '../../../security/jwt/JwUtils.js';
 import BodyParser from '../../../util/BodyParser.js';
 import { DbError } from '../../../util/enums.js';
 import { Account } from '../../../database/entity/Account.js';
+import { authenticateAccount, loginAccount } from '../../../security/middleware/authentication.js';
 
 const router = Router();
 
+// Create Account (/v1/account/create)
+router.post('/create', async (req, res, next) => {
+
+    if (process.env.ALLOW_MULTIPLE_ACCOUNTS !== '1' && await db.account.count() > 1) {
+        res.status(403).send({ code: 403, message: "Only one account can be registered at this time." });
+        return;
+    }
+
+    const parsedData = BodyParser.parseCreateUser(req.body); 
+    
+    if (parsedData.error) {
+        delete parsedData.error;
+        res.status(400).send({ code: 400, message: "Bad Request", errors: parsedData });
+        return;
+    }
+
+    const { name, email, password } = parsedData;
+        
+    // Test for valid email address
+    const pattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    if (!pattern.test(String(email.toLowerCase()))) {
+        res.status(400).send({ code: 400, message: "Invalid email address" });
+        return;
+    }
+    
+    const account = await db.account.insert({ name, email: email.toLowerCase(), password_hash: password } as Account);
+    
+    // Test for insert error
+    if (!(account instanceof Account) && account.error && account.error === DbError.DUP_ENTRY) {
+        res.status(409).send({ code: 409, message: "Email already in use" });
+        return;
+    } else if (!account || (!(account instanceof Account) && account.error)) {
+        res.status(500).send({ code: 500, message: "Internal Error" });
+        return;
+    }
+    
+    req.body.account = account;
+    res.status(201);
+    next();
+
+}, loginAccount);
+
+// Login (/v1/account/login)
+router.post('/login', async (req, res, next) => {
+    const { email, password } = req.body;
+
+    if (
+        !email    || typeof email !== "string"    ||
+        !password || typeof password !== "string"
+    ) {
+        res.status(400).send({ code: 400, message: "Bad Request" });
+        return;
+    }
+
+    const account = await db.account.findByEmail(email.toLowerCase());
+    
+    // Check for valid email and password
+    if (!account || !await bcrypt.compare(password, account.password_hash || '')) {
+        res.status(401).send({ code: 401, message: "Email or password is incorrect" });
+        return;
+    }
+
+    req.body.account = account;
+    res.status(200);
+    next();
+
+}, loginAccount);
+
+
+
+// ===== Protected route below this point ===== //
+router.use(authenticateAccount);
+
 // Get Account (/v1/account)
 router.post('/', (req, res) => {
-    res.send({...req.auth})
+    res.send({...req.auth});
 });
 
 // Update Account (/v1/account/update)

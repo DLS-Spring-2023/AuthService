@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { AccountJWT } from "../jwt/JWT.js";
+import { AccountJWT, UserJWT } from "../jwt/JWT.js";
+import db from "../../database/DatabaseGateway.js";
 
 export const authenticateAccount = async (req: Request, res: Response, next: NextFunction) => {
     let accessToken  = req.cookies.account_access_token;
@@ -60,4 +61,152 @@ export const authenticateAccount = async (req: Request, res: Response, next: Nex
     } else {
         res.status(401).send({ code: 401, message: "Unauthorized" });
     }
+}
+
+export const authenticateUser = async (req: Request, res: Response, next: NextFunction) => {
+    let accessToken  = req.cookies.access_token;
+    let sessionToken = req.cookies.session_token;
+
+    if (!accessToken) accessToken  = req.body.accessToken;
+    if (!sessionToken) sessionToken = req.body.sessiontoken;
+
+    // Verify access token
+    const verifiedAccess = accessToken ? await UserJWT.verifyAccessToken(accessToken) : null;
+    if (verifiedAccess && verifiedAccess.account.id) {
+        req.auth = { 
+            accessToken, 
+            sessionToken,
+            user: {
+                id: verifiedAccess.account.id, 
+                name: verifiedAccess.account.name as string, 
+                email: verifiedAccess.account.email as string,
+            }
+        };
+        next();
+        return;
+    } 
+
+    // Verify session token if access was not verified
+    const verifiedSession = sessionToken ? await UserJWT.validateAndRenewSession(sessionToken) : null;
+    if (verifiedSession && verifiedSession.token && verifiedSession.account.id) {
+        
+        accessToken = await UserJWT.signAccessToken(verifiedSession.account.id, verifiedSession.session_id);
+        req.auth = { 
+            accessToken,
+            sessionToken: verifiedSession.token, 
+            didTokensRefresh: true,
+            user: {
+                id: verifiedSession.account.id, 
+                name: verifiedSession.account.name as string, 
+                email: verifiedSession.account.email as string, 
+            }
+        };
+
+        res.cookie('access_token', accessToken, {
+            maxAge: 1000 * 60 * 15 - 10,
+            httpOnly: true,
+            secure: false, // TODO
+            path: '/',
+            sameSite: 'lax'
+        });
+    
+        res.cookie('session_token', verifiedSession.token, {
+            maxAge: 1000 * 60 * 60 * 24 * 365 - 1000 * 10,
+            httpOnly: true,
+            secure: false, // TODO
+            path: '/',
+            sameSite: 'lax'
+        });
+
+        next();
+    } else {
+        res.status(401).send({ code: 401, message: "Unauthorized" });
+    }
+}
+
+export async function loginAccount (req: Request, res: Response) {
+    const account_id = req.body.account.id;
+
+    const session = await AccountJWT.signNewSessionToken(account_id);
+    
+    if (!session) {
+        res.status(500).send({ code: 500, message: "Internal Error" });
+        return;
+    }
+
+    const accessToken = await AccountJWT.signAccessToken(account_id, session?.session_id);
+    
+    res.cookie('account_access_token', accessToken, {
+        maxAge: 1000 * 60 * 15 - 10,
+        httpOnly: true,
+        secure: false, // TODO
+        path: '/',
+        sameSite: 'lax'
+    });
+
+    res.cookie('account_session_token', session.token, {
+        maxAge: 1000 * 60 * 60 * 24 * 365 - 1000 * 10,
+        httpOnly: true,
+        secure: false, // TODO
+        path: '/',
+        sameSite: 'lax'
+    });
+
+    // Response
+    res.send({
+        accessToken: accessToken,
+        sessionToken: session.token
+    });
+}
+
+export async function loginUser (req: Request, res: Response) {
+    const user_id = req.body.user.id;
+
+    const session = await UserJWT.signNewSessionToken(user_id);
+    
+    if (!session) {
+        res.status(500).send({ code: 500, message: "Internal Error" });
+        return;
+    }
+
+    const accessToken = await UserJWT.signAccessToken(user_id, session?.session_id);
+    
+    res.cookie('access_token', accessToken, {
+        maxAge: 1000 * 60 * 15 - 10,
+        httpOnly: true,
+        secure: false, // TODO
+        path: '/',
+        sameSite: 'lax'
+    });
+
+    res.cookie('session_token', session.token, {
+        maxAge: 1000 * 60 * 60 * 24 * 365 - 1000 * 10,
+        httpOnly: true,
+        secure: false, // TODO
+        path: '/',
+        sameSite: 'lax'
+    });
+
+    // Response
+    res.send({
+        accessToken: accessToken,
+        sessionToken: session.token
+    });
+}
+
+export const verifyProject = async (req: Request, res: Response, next: NextFunction) => {
+    const { API_KEY } = req.query;
+    if (!API_KEY) {
+        res.status(401).send({ code: 401, message: "API key is missing" });
+        return;
+    }
+
+    const project = await db.project.findByAPIKey(API_KEY as string);
+    if (!project) {
+        res.status(401).send({ code: 401, message: "Invalid API key" });
+        return;
+    }
+
+    req.project = project;
+    next();
 }

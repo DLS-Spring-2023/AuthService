@@ -4,21 +4,30 @@
     import Users from 'svelte-icons/fa/FaUserFriends.svelte';
     import Settings from 'svelte-icons/md/MdSettings.svelte';
 	import NavButton from '$lib/components/buttons/NavButton.svelte';
+    import CreateUserModal from '$lib/components/modals/CreateUserModal.svelte';
+    import { createUserModal } from '$lib/store/modals';
+	import { onMount } from 'svelte';
 
     $: project = $page.data.project;
      
     let title: string;
-
+    
     $: switch($page.url.pathname.replace(`/console/project/${project.id}`, '')) {
-        case project.id: 
-            title = project.name;
-            break;
         case '/settings':
             title = 'Settings';
+            break;
+        case '/auth':
+            title = 'Auth';
             break;
         default: 
             title = project.name;
     }
+
+    // Modals
+    let showCreateUserModal = false;
+    onMount(() => {
+        createUserModal.subscribe((value) => showCreateUserModal = value);
+    });
 </script>
 
 <div class="relative w-full min-h-full flex">
@@ -43,3 +52,8 @@
         <slot/>
     </div>
 </div>
+
+<!-- Only display from /project/[id]/auth -->
+{#if showCreateUserModal}
+    <CreateUserModal onRequestClose={() => createUserModal.set(false)} />
+{/if}

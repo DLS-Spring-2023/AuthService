@@ -51,6 +51,24 @@ abstract class ParserSchemas {
             }
         });
 
+        protected readonly createUser = z
+        .object({
+            name: z
+                .string(this.stringProps)
+                .min(2, { message: 'Name must be at least 2 characters' })
+                .max(64, { message: 'Name must not be longer than 64 characters' })
+                .trim(),
+            email: z
+                .string(this.stringProps)
+                .min(1, { message: 'Email Required' })
+                .max(164, { message: 'Email is too long' })
+                .email({ message: 'Must be a valid email address' }),
+            password: z
+                .string(this.stringProps) 
+                .min(6, { message: 'Password must be at least 6 character' })
+                .max(64, { message: 'Password must not be longer than 64 characters' })
+        });
+
     protected readonly name = z.object({ name: z
         .string(this.stringProps)
         .trim()

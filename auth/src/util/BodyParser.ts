@@ -13,6 +13,18 @@ class BodyParser extends ParserSchemas {
             return log;
         }
     }
+
+    parseCreateUser(data: {name: string, email: string, password: string}) {
+        try {
+            return this.createUser.parse(data);
+        } catch (err: any) {
+            const log: { [key: string]: any } = { error: true }
+            for (const error of err.errors) {
+                log[error.path[0]] = error.message;
+            }
+            return log;
+        }
+    }
 }
 
 export default new BodyParser();

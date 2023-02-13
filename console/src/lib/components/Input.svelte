@@ -10,7 +10,8 @@
     export let required = false;
     export let disabled = false;
     export let focus = false;
-    
+    export let cursor: "text" | "pointer" | "default" | undefined = undefined;
+
     let hidePass = true;
 
     const typeAction = (node: HTMLInputElement, hide: boolean) => {
@@ -41,7 +42,7 @@
         class="
             w-full bg-light dark:bg-dark p-2
             border border-solid border-slate-500 rounded-md
-            transition ease-linear duration-75
+            transition ease-linear duration-75 {cursor ? `hover:cursor-${cursor}` : ''}
     ">
     {#if type === "password"}
         <div class="

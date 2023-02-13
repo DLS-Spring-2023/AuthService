@@ -5,7 +5,7 @@
 	import DeleteButton from '$lib/components/buttons/DeleteButton.svelte';
 	import SubmitButton from '$lib/components/buttons/SubmitButton.svelte';
 	import DeleteProjectModal from '$lib/components/modals/DeleteProjectModal .svelte';
-	import Input from '$lib/components/modals/Input.svelte';
+	import Input from '$lib/components/Input.svelte';
     import store, { ToastType } from '$lib/store/toast';
     
     let name = $page.data.project.name

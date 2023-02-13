@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS project (
   name       varchar(255) NOT NULL, 
   created_at timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP, 
   updated_at timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, 
+  api_key    varchar(255) NOT NULL UNIQUE DEFAULT UUID(),
   PRIMARY KEY (id));
 
 CREATE TABLE IF NOT EXISTS keystore (
@@ -38,16 +39,16 @@ CREATE TABLE IF NOT EXISTS server_settings (
 
 
 CREATE TABLE IF NOT EXISTS `user` (
-  id            varchar(255) NOT NULL, 
-  project_id    varchar(255) NOT NULL, 
-  name          varchar(255) NOT NULL, 
-  email         varchar(255) NOT NULL UNIQUE, 
-  password_hash varchar(255) NOT NULL, 
-  role          varchar(255), 
-  created_at    timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP, 
-  updated_at    timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, 
-  enabled       tinyint      NOT NULL DEFAULT 1 , 
-  verified      tinyint      NOT NULL DEFAULT 0 , 
+  id            varchar(255) NOT NULL,
+  project_id    varchar(255) NOT NULL,
+  name          varchar(255) NOT NULL,
+  email         varchar(255) NOT NULL UNIQUE,
+  password_hash varchar(255) NOT NULL,
+  -- role          varchar(255) DEFAULT NULL,
+  created_at    timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at    timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  enabled       tinyint      NOT NULL DEFAULT 1,
+  verified      tinyint      NOT NULL DEFAULT 0,
   PRIMARY KEY (id));
 
 

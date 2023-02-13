@@ -2,8 +2,11 @@ import { Router } from 'express';
 import db from '../../../database/DatabaseGateway.js';
 import { Project } from '../../../database/entity/Project.js';
 import RSA from '../../../security/keygen/RSA.js';
+import { authenticateAccount } from '../../../security/middleware/authentication.js';
 
 const router = Router();
+
+router.use(authenticateAccount);
 
 // Get all personal projects (/v1/project)
 router.post('/', async (req, res) => {
@@ -28,10 +31,6 @@ router.post('/create', async (req, res) => {
         return;
     }
 
-    const key = new RSA(project.id);
-    key.generate();
-    await key.save();
-
     res.send({...req.auth, data: project});
 });
 
@@ -50,6 +49,26 @@ router.post('/:id/get', async (req, res) => {
     }
 
     res.send(project);
+});
+
+// Get project users (/v1/project/:id/users)
+router.post('/:id/users', async (req, res) => {
+    const project = await db.project.findById(req.params.id);
+
+    if (!project || !project.id) {
+        res.status(404).send({ code: 404, message: "Not Found" });
+        return;
+    }
+
+    if (project.account_id !== req.auth.user.id) {
+        res.status(401).send({ code: 401, message: "Unauthorized" });
+        return;
+    }
+
+    const users = await db.user.findByProjectId(project.id);
+    for (const user of users) delete user.password_hash;
+
+    res.send({ data: users });
 });
 
 

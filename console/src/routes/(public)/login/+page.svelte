@@ -6,7 +6,7 @@
     import FaEyeSlash from 'svelte-icons/fa/FaEyeSlash.svelte'
     import toast, { ToastType } from '$lib/store/toast';
 	import SubmitButton from "$lib/components/buttons/SubmitButton.svelte";
-	import Input from "$lib/components/modals/Input.svelte";
+	import Input from "$lib/components/Input.svelte";
 
     const { data } = $page;
     

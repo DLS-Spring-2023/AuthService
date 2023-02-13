@@ -2,6 +2,7 @@ import express from 'express';
 import cookies from 'cookie-parser';
 import db from './database/DatabaseGateway.js';
 import router from './router/router.js';
+import { Project } from './database/entity/Project.js';
 
 declare module "express-serve-static-core" {
     interface Request {
@@ -14,7 +15,8 @@ declare module "express-serve-static-core" {
                 name: string;
                 email: string;
             }
-        }
+        },
+        project: Project;
     }
 }
 
