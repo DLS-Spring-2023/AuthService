@@ -54,6 +54,8 @@ class UserRepo {
                 email: user.email,
                 password_hash: await bcrypt.hash(user.password_hash as string, 12)
             }
+        }).catch((err) => {
+            return { error: err.code };
         });
     }
 

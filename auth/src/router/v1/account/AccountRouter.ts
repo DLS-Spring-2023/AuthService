@@ -34,17 +34,18 @@ router.post('/create', async (req, res, next) => {
         return;
     }
     
-    const account = await db.account.insert({ name, email: email.toLowerCase(), password_hash: password } as Account);
+    const account = await db.account.create({ name, email: email.toLowerCase(), password_hash: password } as Account);
     
-    // TODO: Test and handle insert errors
     // Test for insert error
-    // if (!(account instanceof Account) && account.error && account.error === DbError.DUP_ENTRY) {
-    //     res.status(409).send({ code: 409, message: "Email already in use" });
-    //     return;
-    // } else if (!account || (!(account instanceof Account) && account.error)) {
-    //     res.status(500).send({ code: 500, message: "Internal Error" });
-    //     return;
-    // }
+    // @ts-ignore
+    if (account.error && account.error === DbError.DUP_ENTRY) {
+        res.status(409).send({ code: 409, message: "Email already in use" });
+        return;
+    // @ts-ignore
+    } else if (!account || account.error) {
+        res.status(500).send({ code: 500, message: "Internal Error" });
+        return;
+    }
     
     req.body.account = account;
     res.status(201);

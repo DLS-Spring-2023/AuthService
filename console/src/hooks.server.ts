@@ -61,7 +61,6 @@ export const handle: Handle = async ({resolve, event}) => {
     await verifyUser();
     
     // Auth check
-    console.log(event.route.id);
     if ((!event.route.id || event.route.id.startsWith('/(private)')) && !event.locals.consoleUser) {
         throw redirect(303, '/');
     }

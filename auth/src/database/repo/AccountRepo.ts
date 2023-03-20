@@ -41,7 +41,7 @@ class AccountRepo {
     /**
      * insert
      */
-    public async insert(account: Account): Promise<Account | { error: string }> {
+    public async create(account: Account): Promise<Account | { error: string }> {
         return await this.db.account.create({
             data: {
                 id: Snowflake.nextHexId(),
@@ -50,6 +50,8 @@ class AccountRepo {
                 password_hash: await bcrypt.hash(account.password_hash as string, 12),
                 enabled: account.enabled
             }
+        }).catch((err) => {
+            return { error: err.code };
         });
     }
 

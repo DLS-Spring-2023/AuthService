@@ -10,5 +10,5 @@ export enum OrgRole {
 }
 
 export enum DbError {
-    DUP_ENTRY = 'ER_DUP_ENTRY',
+    DUP_ENTRY = 'P2002',
 }
