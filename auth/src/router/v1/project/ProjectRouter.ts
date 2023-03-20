@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import db from '../../../database/DatabaseGateway.js';
-import { Project } from '../../../database/entity/Project.js';
 import RSA from '../../../security/keygen/RSA.js';
 import { authenticateAccount } from '../../../security/middleware/authentication.js';
 import BodyParser from '../../../util/BodyParser.js';
 import { DbError } from '../../../util/enums.js';
+import { Project } from '@prisma/client';
 
 const router = Router();
 
@@ -28,11 +28,12 @@ router.post('/create', async (req, res) => {
 
     const project = await db.project.create(name, req.auth.user.id);
    
+    // TODO: Test and handle create error
     // Test for create error
-    if (!(project instanceof Project) || !project.id) {
-        res.status(500).send({ code: 500, message: "Internal Error" });
-        return;
-    }
+    // if (!(project instanceof Project) || !project.id) {
+    //     res.status(500).send({ code: 500, message: "Internal Error" });
+    //     return;
+    // }
 
     res.send({...req.auth, data: project});
 });
@@ -50,7 +51,7 @@ router.post('/:id/get', async (req, res) => {
         res.status(401).send({ code: 401, message: "Unauthorized" });
         return;
     }
-
+    
     res.send({...req.auth, data: project});
 });
 
@@ -80,11 +81,12 @@ router.put('/:id', async (req, res) => {
 
     const result = await db.project.update(project);
 
+    // TODO: Test and handle insert error
     // Test for insert error
-    if (!result || (typeof result !== "boolean" && result.error)) {
-        res.status(500).send({ code: 500, message: "Internal Error" });
-        return;
-    }
+    // if (!result || (typeof result !== "boolean" && result.error)) {
+    //     res.status(500).send({ code: 500, message: "Internal Error" });
+    //     return;
+    // }
 
     res.send({ ...req.auth });
 });
@@ -132,11 +134,13 @@ router.post('/:id/users', async (req, res) => {
     }
 
     const users = await db.user.findByProjectId(project.id);
+    
+    // @ts-ignore
     for (const user of users) delete user.password_hash;
-
     res.send({ ...req.auth, data: users });
 });
 
+// Find project user by ID (/v1/project/:project_id/users/:user_id)
 router.post('/:project_id/users/:user_id', async (req, res) => {
     const project = await db.project.findById(req.params.project_id);
 
@@ -157,6 +161,7 @@ router.post('/:project_id/users/:user_id', async (req, res) => {
         return;
     }
 
+    // @ts-ignore
     delete user.password_hash;
     res.send({ ...req.auth, data: user });
 });
@@ -235,14 +240,15 @@ router.put('/:project_id/users/:user_id', async (req, res) => {
 
     const result = await db.user.update(user);
     
+    // TODO: Test and handle update errors
     // Test for insert error
-    if (typeof result !== "boolean" && result.error && result.error === DbError.DUP_ENTRY) {
-        res.status(409).send({ code: 409, message: "Email already in use" });
-        return;
-    } else if (!result || typeof result !== "boolean") {
-        res.status(500).send({ code: 500, message: "Internal Error" });
-        return;
-    }
+    // if (typeof result !== "boolean" && result.error && result.error === DbError.DUP_ENTRY) {
+    //     res.status(409).send({ code: 409, message: "Email already in use" });
+    //     return;
+    // } else if (!result || typeof result !== "boolean") {
+    //     res.status(500).send({ code: 500, message: "Internal Error" });
+    //     return;
+    // }
 
     res.send({ ...req.auth });
 });

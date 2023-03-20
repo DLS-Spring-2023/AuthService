@@ -30,6 +30,7 @@ export const load = (async ({fetch, params, locals}) => {
 
 
 export const actions: Actions = {
+    // Create a new user
     default: async ({ request,  }) => {
         const form = await request.formData();
 		const formData = Object.fromEntries(form);

@@ -7,7 +7,6 @@ declare global {
 	namespace App {
 		// interface Error {}
 		interface Locals {
-			REQUIRE_AUTH: boolean,
 			consoleUser?: ConsoleUser,
 			authTokens?: AuthTokens,
 		}

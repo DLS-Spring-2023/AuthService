@@ -4,8 +4,8 @@ import db from '../../../database/DatabaseGateway.js';
 import JwtUtils from '../../../security/jwt/JwUtils.js';
 import BodyParser from '../../../util/BodyParser.js';
 import { DbError } from '../../../util/enums.js';
-import { Account } from '../../../database/entity/Account.js';
 import { authenticateAccount, loginAccount } from '../../../security/middleware/authentication.js';
+import { Account } from '@prisma/client';
 
 const router = Router();
 
@@ -36,14 +36,15 @@ router.post('/create', async (req, res, next) => {
     
     const account = await db.account.insert({ name, email: email.toLowerCase(), password_hash: password } as Account);
     
+    // TODO: Test and handle insert errors
     // Test for insert error
-    if (!(account instanceof Account) && account.error && account.error === DbError.DUP_ENTRY) {
-        res.status(409).send({ code: 409, message: "Email already in use" });
-        return;
-    } else if (!account || (!(account instanceof Account) && account.error)) {
-        res.status(500).send({ code: 500, message: "Internal Error" });
-        return;
-    }
+    // if (!(account instanceof Account) && account.error && account.error === DbError.DUP_ENTRY) {
+    //     res.status(409).send({ code: 409, message: "Email already in use" });
+    //     return;
+    // } else if (!account || (!(account instanceof Account) && account.error)) {
+    //     res.status(500).send({ code: 500, message: "Internal Error" });
+    //     return;
+    // }
     
     req.body.account = account;
     res.status(201);
@@ -117,14 +118,15 @@ router.put('/update', async (req, res) => {
 
     const result = await db.account.update(account);
 
+    // TODO: Test and handle insert error
     // Test for insert error
-    if (typeof result !== "boolean" && result.error && result.error === DbError.DUP_ENTRY) {
-        res.status(409).send({ code: 409, message: "Email already in use" });
-        return;
-    } else if (!result || typeof result !== "boolean") {
-        res.status(500).send({ code: 500, message: "Internal Error" });
-        return;
-    }
+    // if (typeof result !== "boolean" && result.error && result.error === DbError.DUP_ENTRY) {
+    //     res.status(409).send({ code: 409, message: "Email already in use" });
+    //     return;
+    // } else if (!result || typeof result !== "boolean") {
+    //     res.status(500).send({ code: 500, message: "Internal Error" });
+    //     return;
+    // }
 
     req.auth.user.name = account.name as string;
     req.auth.user.email = account.email as string;
@@ -136,7 +138,7 @@ router.post('/logout', async (req, res) => {
     const { sessionToken } = req.auth;
 
     const decoded = JwtUtils.decodeToken(sessionToken);
-    await db.accountSession.killSession(decoded.session_id);
+    await db.accountSession.killSession(BigInt(decoded.session_id));
     res.status(204).send();
 });
 

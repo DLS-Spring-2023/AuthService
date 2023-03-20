@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DB_URL")
+}
+
+model Account {
+    id              String   @id
+    name            String
+    email           String   @unique
+    password_hash   String
+    created_at      DateTime @default(now())
+    updated_at      DateTime @updatedAt
+    enabled         Boolean  @default(true)
+    sessions        AccountSession[]
+    projects        Project[]
+}
+
+model AccountSession {
+    id         BigInt  @id
+    session_id BigInt
+    iteration  Int     @default(1)
+    user_id String  
+    account    Account @relation(fields: [user_id], references: [id], onDelete: Cascade)
+    valid      Boolean @default(true)
+    expires    DateTime
+    @@unique([id, iteration])
+}
+
+
+model Project {
+    id         String   @id
+    account_id String
+    account    Account @relation(fields: [account_id], references: [id], onDelete: Cascade)
+    name       String
+    created_at DateTime @default(now())
+    updated_at DateTime @updatedAt
+    users      User[]
+    keystore   Keystore?
+}
+
+model Keystore {
+    project_id  String @id
+    jwt_pub_key String @unique
+    jwt_prv_key String @unique
+    api_key     String @unique @default(cuid())
+    project     Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
+}
+
+
+model User {
+    id              String   @id
+    project_id      String
+    project         Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+    name            String
+    email           String   @unique
+    password_hash   String
+    created_at      DateTime @default(now())
+    updated_at      DateTime @updatedAt
+    enabled         Boolean  @default(true)
+    verified        Boolean  @default(false)
+    sessions        UserSession[]
+}
+
+model UserSession {
+    id         BigInt  @id
+    session_id BigInt
+    iteration  Int     @default(1)
+    user_id    String
+    user       User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+    valid      Boolean @default(true)
+    expires    DateTime
+    @@unique([id, iteration])
+}

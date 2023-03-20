@@ -6,9 +6,10 @@ import Settings from "$lib/server/settings/Settings";
 import { AUTH_TARGET } from "$env/static/private";
 
 export const load: PageServerLoad = async ({locals}) => {
-    if (!Settings.REQUIRE_AUTH) { // TODO: add auth check
+    if (locals.consoleUser) {
         throw redirect(302, '/');
     }
+    
 };
 
 export const actions: Actions = {

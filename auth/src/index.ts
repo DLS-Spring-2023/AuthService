@@ -2,7 +2,7 @@ import express from 'express';
 import cookies from 'cookie-parser';
 import db from './database/DatabaseGateway.js';
 import router from './router/router.js';
-import { Project } from './database/entity/Project.js';
+import { Project } from '@prisma/client';
 
 declare module "express-serve-static-core" {
     interface Request {
@@ -27,11 +27,6 @@ const server = express();
 
 server.use(express.json());
 server.use(cookies());
-
-const REQUIRE_AUTH = !!Number.parseInt(process.env.REQUIRE_AUTH || '1');
-server.get('/status', (req, res) => {
-    res.send(REQUIRE_AUTH);
-});
 
 server.use(router);
 

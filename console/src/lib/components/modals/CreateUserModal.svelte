@@ -51,7 +51,7 @@
             <label for="re_password" class="mt-4">Repeat Password</label>
             <Input id="re_password" name="re_password" placeholder="********" type="password" disabled={loading} focus required/>
 
-            <input type="hidden" name="api_key" value={$page.data.project.api_key} />
+            <input type="hidden" name="api_key" value={$page.data.project.keystore.api_key} />
 
             <div class="flex w-full justify-between mt-8">
                 <CancelButton w={20} disabled={loading} onClick={onRequestClose}>Cancel</CancelButton>

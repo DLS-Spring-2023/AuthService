@@ -1,112 +1,99 @@
-import { Pool } from "mariadb";
+import { PrismaClient, Project } from "@prisma/client";
 import Snowflake from "../../util/Snowflake.js";
-import { Project } from "../entity/Project.js";
 
 class ProjectRepo {
     private readonly db;
 
-    constructor(db: Pool) {
+    constructor(db: PrismaClient) {
         this.db = db;
     }
 
     /**
      * findById
      */
-    public async findById(id: string): Promise<Project | undefined> {
-        const conn = await this.db.getConnection();
-        
-        const res = await conn.query(`SELECT * from project WHERE (id = ?) LIMIT 1;`, [id]);
-        conn.release();
+    public async findById(id: string): Promise<Project | null> {
+        return await this.db.project.findUnique({
+            where: {
+                id
+            },
+            include: {
+                keystore: {
+                    select: { api_key: true }
+                }
+            }
 
-        return res[0];
+        });
     }
 
     /**
      * findByOrgId
      */
-    public async findByAccountId(id: string): Promise<Project | undefined> {
-        const conn = await this.db.getConnection();
-        
-        const res = await conn.query(`SELECT * from project WHERE (account_id = ?);`, [id]);
-        conn.release();
-
-        delete res.meta;
-        
-        return res;
+    public async findByAccountId(id: string): Promise<Project[] | null> {
+        return await this.db.project.findMany({
+            where: {
+                account_id: id
+            }
+        });
     }
 
     /**
      * findByAPIKey
      */
-    public async findByAPIKey(API_KEY: string) {
-        const conn = await this.db.getConnection();
-        
-        const res = await conn.query(`SELECT * from project WHERE (API_KEY = ?) LIMIT 1;`, [API_KEY]);
-        conn.release();
-
-        return res[0];
+    public async findByAPIKey(api_key: string) {
+        return await this.db.project.findFirst({
+            where: {
+                keystore: { api_key }
+            }
+        });
     }
 
     /**
      * create
      */
     public async create(name: string, account_id: string): Promise<Project | { error: string }> {
-        const conn = await this.db.getConnection();
-
-        const id = Snowflake.nextHexId();
         
-        const query = `INSERT INTO project (id, account_id, name) VALUES (?, ?, ?) RETURNING *;`;
-        const prep  = [id, account_id, name];
+        // FIXME: generate jwt keys
+        const jwt_pub_key = "-----BEGIN PUBLIC KEY-----\n"; 
+        const jwt_prv_key = "-----BEGIN PRIVATE KEY-----\n";
 
-        let res;
-        try {
-            const result = await conn.query(query, prep);
-            res = result[0]
-        } catch (err: any) {
-            res = { error: err.code };
-        } finally {
-            conn.release();
-        }
-        
-        return res ? new Project(res) : res;
+        return await this.db.project.create({
+            data: {
+                id: Snowflake.nextHexId(),
+                name,
+                account_id,
+                keystore: {
+                    create: {
+                        jwt_pub_key,
+                        jwt_prv_key,
+                    } as any // TypeScript doesn't know 'api_key' has a default value >_<
+                }
+            }
+        });
     }
 
     /**
      * update
      */
-    public async update(project: Project): Promise<boolean | { error: string }> {
-        const conn = await this.db.getConnection();
-
-        const query = `UPDATE project SET name = ? WHERE (id = ?);`;
-        const prep = [project.name, project.id];
-        
-        let res;
-        try {
-            res = await conn.query(query, prep);
-        } catch (err: any) {
-            res = { error: err.code };
-        } finally {
-            conn.release();
-        }
-
-        const { affectedRows } = Object.getOwnPropertyDescriptors(res);
-        return affectedRows.value === 1; // if true, success
+    public async update(project: Project): Promise<Project | null> {
+        return await this.db.project.update({
+            where: {
+                id: project.id
+            },
+            data: {
+                name: project.name
+            }
+        });
     }
 
     /**
      * delete
      */
-    public async delete(project: Project): Promise<boolean> {
-        const conn = await this.db.getConnection();
-
-        const query = `DELETE FROM project WHERE (id = ?);`;
-        const prep = [project.id]
-
-        const res = await conn.query(query, prep);
-        conn.release();
-
-        const { affectedRows } = Object.getOwnPropertyDescriptors(res);
-        return affectedRows.value === 1; // if true, success
+    public async delete(project: Project): Promise<Project> {
+        return await this.db.project.delete({
+            where: {
+                id: project.id
+            }
+        });
     }
 
 }

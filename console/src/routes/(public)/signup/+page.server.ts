@@ -5,7 +5,7 @@ import { fail, redirect, type Actions } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({locals}) => {
-    if (!Settings.REQUIRE_AUTH) { // TODO: add auth check
+    if (locals.consoleUser) {
         throw redirect(302, '/');
     }
 };

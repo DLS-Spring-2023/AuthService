@@ -1,12 +1,11 @@
-import { Pool } from "mariadb";
 import bcrypt from 'bcrypt';
 import Snowflake from "../../util/Snowflake.js";
-import { Account } from "../entity/Account.js";
+import { Account, PrismaClient } from "@prisma/client";
 
 class AccountRepo {
     private readonly db;
 
-    constructor(db: Pool) {
+    constructor(db: PrismaClient) {
         this.db = db;
     }
 
@@ -14,99 +13,73 @@ class AccountRepo {
      * count
      */
     public async count(): Promise<bigint> {
-        const conn = await this.db.getConnection();
-        
-        const res = await conn.query(`SELECT COUNT(*) FROM account;`);
-        conn.release();
-
-        return BigInt(res[0]['COUNT(*)']);
+        return BigInt(await this.db.account.count());
     }
 
     /**
      * findById
      */
-    public async findById(id: string): Promise<Account | undefined> {
-        const conn = await this.db.getConnection();
-        
-        const res = await conn.query(`SELECT * from account WHERE (id = ?);`, [id]);
-        conn.release();
-
-        return res[0];
+    public async findById(id: string): Promise<Account | null> {
+        return await this.db.account.findUnique({
+            where: {
+                id: id
+            }
+        });
     }
 
     /**
      * findByEmail
      */
-    public async findByEmail(email: string): Promise<Account | undefined> {
-        const conn = await this.db.getConnection();
-        
-        const res = await conn.query("SELECT * from account WHERE (email = ?);", [email]);
-        conn.release();
-
-        return res[0];
+    public async findByEmail(email: string): Promise<Account | null> {
+        return await this.db.account.findUnique({
+            where: {
+                email: email
+            }
+        });
     }
 
     /**
      * insert
      */
     public async insert(account: Account): Promise<Account | { error: string }> {
-        const conn = await this.db.getConnection();
-
-        const pass = await bcrypt.hash(account.password_hash as string, 12);
-        const id = Snowflake.nextHexId();
-
-        const query = `INSERT INTO account (id, name, email, password_hash) VALUES (?, ?, ?, ?) RETURNING *;`;
-        const prep = [id, account.name, account.email, pass];
-        
-        let res;
-        try {
-            const result = await conn.query(query, prep);
-            res = result[0] ? new Account(result[0]) : result[0]
-        } catch (err: any) {
-            res = [{ error: err.code }];
-        } finally {
-            conn.release();
-        }
-        
-        return res;
+        return await this.db.account.create({
+            data: {
+                id: Snowflake.nextHexId(),
+                name: account.name,
+                email: account.email,
+                password_hash: await bcrypt.hash(account.password_hash as string, 12),
+                enabled: account.enabled
+            }
+        });
     }
 
     /**
      * update
      */
-    public async update(account: Account): Promise<boolean | { error: string }> {
-        const conn = await this.db.getConnection();
-
-        const query = `UPDATE account SET name = ?, email = ?, password_hash = ?, enabled = ? WHERE (id = ?);`;
-        const prep = [account.name, account.email, account.password_hash, account.enabled, account.id];
-        
-        let res;
-        try {
-            res = await conn.query(query, prep);
-        } catch (err: any) {
-            res = { error: err.code };
-        } finally {
-            conn.release();
-        }
-
-        const { affectedRows } = Object.getOwnPropertyDescriptors(res);
-        return affectedRows.value === 1; // if true, success
+    public async update(account: Account): Promise<Account> {
+        return await this.db.account.update({
+            where: {
+                id: account.id
+            },
+            data: {
+                name: account.name,
+                email: account.email,
+                password_hash: account.password_hash,
+                enabled: account.enabled
+            }
+        });
     }
 
     /**
      * delete
      */
-    public async delete(account: Account): Promise<boolean> {
-        const conn = await this.db.getConnection();
-
-        const query = `DELETE FROM account WHERE (id = ?);`;
-        const prep = [account.id]
-
-        const res = await conn.query(query, prep);
-        conn.release();
-        
-        const { affectedRows } = Object.getOwnPropertyDescriptors(res);
-        return affectedRows.value === 1; // if true, success
+    //   
+    public async delete(account: Account): Promise<Account> {
+        return await this.db.account.delete({
+            where: {
+                id: account.id
+            }
+        });
     }
 }
 

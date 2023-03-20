@@ -4,7 +4,7 @@ import { authenticateUser, loginUser, verifyProject } from '../../../security/mi
 import BodyParser from '../../../util/BodyParser.js';
 import db from '../../../database/DatabaseGateway.js'
 import { DbError } from '../../../util/enums.js';
-import { User } from '../../../database/entity/User.js';
+import { User } from '@prisma/client';
 
 const router = Router();
 
@@ -22,16 +22,17 @@ router.post('/create', async (req, res, next) => {
     const { name, email, password } = parsedData;
     
 
-    const user = await db.user.create({ name, email: email.toLowerCase(), password_hash: password, project_id: req.project.id });
+    const user = await db.user.create({ name, email: email.toLowerCase(), password_hash: password, project_id: req.project.id } as User);
     
+    // TODO: Test and handle insert errors
     // Test for insert error
-    if (!(user instanceof User) && user.error && user.error === DbError.DUP_ENTRY) {
-        res.status(409).send({ code: 409, message: "Email already in use" });
-        return;
-    } else if (!user || (!(user instanceof User) && user.error)) {
-        res.status(500).send({ code: 500, message: "Internal Error" });
-        return;
-    }
+    // if (!(user instanceof User) && user.error && user.error === DbError.DUP_ENTRY) {
+    //     res.status(409).send({ code: 409, message: "Email already in use" });
+    //     return;
+    // } else if (!user || (!(user instanceof User) && user.error)) {
+    //     res.status(500).send({ code: 500, message: "Internal Error" });
+    //     return;
+    // }
     
     req.body.user = user;
     res.status(201);

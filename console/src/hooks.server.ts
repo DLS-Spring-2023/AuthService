@@ -8,11 +8,6 @@ await Startup.run()
 export const handle: Handle = async ({resolve, event}) => {
     
     const verifyUser = async () => {
-        if (!Settings.REQUIRE_AUTH) {
-            event.locals.consoleUser = { id: 'noauth', name: 'Anonymous' };
-            return;
-        }
-
         event.locals.consoleUser = undefined;
 
         const accessToken = event.cookies.get('account_access_token');
@@ -66,6 +61,7 @@ export const handle: Handle = async ({resolve, event}) => {
     await verifyUser();
     
     // Auth check
+    console.log(event.route.id);
     if ((!event.route.id || event.route.id.startsWith('/(private)')) && !event.locals.consoleUser) {
         throw redirect(303, '/');
     }

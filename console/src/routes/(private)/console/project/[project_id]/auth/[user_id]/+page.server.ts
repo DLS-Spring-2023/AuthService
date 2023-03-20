@@ -36,15 +36,6 @@ export const actions: Actions = {
             return fail(400, { message: "Bad Request" });
         }
 
-        const user = { 
-            name, 
-            email, 
-            password, 
-            enabled: enabled ? enabled === "true" : undefined, 
-            verified: verified ? verified === "true" : undefined,
-        }
-        
-
         const response = await fetch(`${AUTH_TARGET}/project/${params.project_id}/users/${params.user_id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },

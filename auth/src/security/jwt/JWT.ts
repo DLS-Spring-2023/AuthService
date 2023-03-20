@@ -6,8 +6,7 @@ import db from "../../database/DatabaseGateway.js";
 import { SessionTable } from "../../util/enums.js";
 import UserRepo from "../../database/repo/UserRepo.js";
 import JwtUtils from "./JwUtils.js";
-import { Account } from "../../database/entity/Account.js";
-import { User } from "../../database/entity/User.js";
+import { Account, AccountSession, User, UserSession } from "@prisma/client";
 
 interface IJWT {
     signAccessToken(account_id: string, session_id: bigint): Promise<string | null>;
@@ -35,40 +34,41 @@ class JWT extends JwtUtils implements IJWT {
         }
     }
 
-    public signAccessToken(account_id: string, session_id: bigint) {
+    public signAccessToken(user_id: string, session_id: bigint) {
         return new Promise<string | null>((accept) => {
-            jwt.sign({ session_id: String(session_id) }, JWT.privateAccessKey, { ...JWT.accessTokenSignOptions, subject: account_id}, async (error, encoded) => {
+            jwt.sign({ session_id: String(session_id) }, JWT.privateAccessKey, { ...JWT.accessTokenSignOptions, subject: user_id}, async (error, encoded) => {
                 if (error) accept(null);
                 else       accept(encoded as string);
             });
         });
     }
 
-    public signNewSessionToken(account_id: string) {
+    public signNewSessionToken(user_id: string) {
         const id = Snowflake.nextId();
         const session_id = Snowflake.nextId();
         const payload = { id: String(id), session_id: String(session_id) }
 
         return new Promise<{token: string, session_id: bigint} | null>((accept) => {
-            jwt.sign(payload, JWT.privateSessionKey, { ...JWT.sessionTokenSignOptions, subject: account_id}, async (error, encoded) => {
+            jwt.sign(payload, JWT.privateSessionKey, { ...JWT.sessionTokenSignOptions, subject: user_id}, async (error, encoded) => {
                 if (error || !encoded) accept(null);
                 else {
-                    const success = await this.sessionRepo.startNewSession({ id, session_id: session_id, account_id: account_id });
+                    const success = await this.sessionRepo.startNewSession({ id, session_id: session_id, user_id } as AccountSession | UserSession);
                     accept(success ? {token: encoded, session_id: session_id} : null);
                 }
             });
         });
     }
 
-    private renewSessionToken(account_id: string, session_id: bigint) {
+    private renewSessionToken(user_id: string, session_id: bigint) {
         const id = Snowflake.nextId();
-        const payload = { id: String(id), session_id }
+        const payload = { id: String(id), session_id: String(session_id) }
 
         return new Promise<string | null>((accept) => {
-            jwt.sign(payload, JWT.privateSessionKey, { ...JWT.sessionTokenSignOptions, subject: account_id}, async (error, encoded) => {
+            jwt.sign(payload, JWT.privateSessionKey, { ...JWT.sessionTokenSignOptions, subject: user_id}, async (error, encoded) => {
                 if (error || !encoded) accept(null);
                 else {
-                    await this.sessionRepo.renewSession({id, account_id, session_id});
+                    
+                    await this.sessionRepo.renewSession({id, user_id, session_id} as AccountSession | UserSession);
                     accept(encoded);
                 }
             });
@@ -84,6 +84,7 @@ class JWT extends JwtUtils implements IJWT {
                 }
                 
                 const { session_id, sub } = decoded as JwtPayload;
+                
                 if (!session_id || !sub) {
                     accept(null);
                     return;
@@ -140,12 +141,12 @@ class JWT extends JwtUtils implements IJWT {
                 // If token is expired or invalid, kill session
                 const expired = new Date(Number.parseInt(session.expires.toString())).getTime() < Date.now();
                 if (expired || !session.valid) {
-                    this.sessionRepo.killSession(session_id);
+                    this.sessionRepo.killSession(BigInt(session_id));
                     accept(null);
                     return;
                 }
                 
-                accept({ session_id, account });
+                accept({ session_id: BigInt(session_id), account });
             });
         });
     }
