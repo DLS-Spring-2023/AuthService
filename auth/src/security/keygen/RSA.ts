@@ -1,73 +1,61 @@
-import NodeRSA from "node-rsa";
-import db from "../../database/DatabaseGateway.js";
-import path from 'path';
-import fs from 'fs';
+import NodeRSA from 'node-rsa';
+import crypto from 'crypto';
 
 enum Format {
-    privateDer = 'pkcs8-private-der',
-    privatePem = 'pkcs8-private-pem',
-    publicDer  = 'pkcs8-public-der',
-    publicPem  = 'pkcs8-public-pem',
+	privateDer = 'pkcs8-private-der',
+	privatePem = 'pkcs8-private-pem',
+	publicDer = 'pkcs8-public-der',
+	publicPem = 'pkcs8-public-pem'
 }
 
 class RSA {
+	private readonly key = new NodeRSA();
 
-    private readonly key = new NodeRSA();
-    private readonly path = `${path.resolve()}/keystore`;
+	private static algorithm = 'aes-256-cbc';
+	private static encryptionKey = crypto.scryptSync(
+		process.env.JWT_ENCRYPTION_SECRET || '',
+		'salt',
+		32
+	);
+	private static iv = crypto.randomBytes(16);
 
-    public readonly project_id: string;
+	constructor() {
+		if (!process.env.JWT_ENCRYPTION_SECRET) {
+			throw new Error('JWT_ENCRYPTION_SECRET not set');
+		}
+		this.generate();
+	}
 
-    constructor(project_id: string) {
-        this.project_id = project_id;
-    }
+	static encrypt(data: string) {
+		const cipher = crypto.createCipheriv(this.algorithm, this.encryptionKey, this.iv);
+		return Buffer.concat([cipher.update(data), cipher.final()]);
+	}
 
-    // NEVER EXPOSE
-    getPrivateKey() {
-        return this.key.exportKey(Format.privatePem);
-    }
+	static decrypt(data: Buffer, iv: Buffer) {
+		const decipher = crypto.createDecipheriv(this.algorithm, this.encryptionKey, iv);
+		return Buffer.concat([decipher.update(data), decipher.final()]);
+	}
 
-    getPublicKey() {
-        return this.key.exportKey(Format.publicPem);
-    }
+	static getIv() {
+		return this.iv.toString('hex');
+	}
 
-    generate() {
-        if (!this.key.isEmpty()) return;
-        const start = Date.now();
-        this.key.generateKeyPair();
-        const duration = (Date.now() - start) / 1000
-        console.log('Generated new RSA key in', duration, 'seconds');
-    }
+	// NEVER EXPOSE
+	getPrivateKey() {
+		return this.key.exportKey(Format.privatePem);
+	}
 
-    loadKeys() {
-        let key;
-        try {
-            key = fs.readFileSync(`${this.path}/${this.project_id}.pem`)
-        } catch (err) {
-            return;
-        }
+	getPublicKey() {
+		return this.key.exportKey(Format.publicPem);
+	}
 
-        this.key.importKey(key, Format.privatePem);
-    }
-
-    save() {
-        if (this.key.isEmpty()) {
-            console.error("Cannot save empty key");
-            return;
-        }
-
-        // create /keystore directory if it doesn't exist
-        if (!fs.existsSync(`${path.resolve()}/keystore`)) {
-            fs.mkdirSync(`${path.resolve()}/keystore`);
-        }
-
-        fs.writeFileSync(`${this.path}/${this.project_id}.pem`, this.getPrivateKey());
-    }
-
-    deleteKey() { 
-        try {
-            fs.rmSync(`${this.path}/${this.project_id}.pem`);
-        } catch (err) {}
-    }
+	private generate() {
+		if (!this.key.isEmpty()) return;
+		const start = Date.now();
+		this.key.generateKeyPair();
+		const duration = (Date.now() - start) / 1000;
+		console.log('Generated new RSA key in', duration, 'seconds');
+	}
 }
 
 export default RSA;

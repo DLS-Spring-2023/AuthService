@@ -23,13 +23,19 @@ model AccountSession {
     id         BigInt  @id
     session_id BigInt
     iteration  Int     @default(1)
-    user_id String  
+    user_id    String  
     account    Account @relation(fields: [user_id], references: [id], onDelete: Cascade)
     valid      Boolean @default(true)
     expires    DateTime
     @@unique([id, iteration])
 }
 
+model AccountKeystore {
+    id          Int     @id @default(0)
+    iv          String
+    public_key  String  @db.Text
+    private_key String  @db.Text
+}
 
 model Project {
     id         String   @id
@@ -39,14 +45,15 @@ model Project {
     created_at DateTime @default(now())
     updated_at DateTime @updatedAt
     users      User[]
-    keystore   Keystore?
+    keystore   ProjectKeystore?
 }
 
-model Keystore {
+model ProjectKeystore {
     project_id  String @id
-    jwt_pub_key String @unique
-    jwt_prv_key String @unique
-    api_key     String @unique @default(cuid())
+    iv          String
+    public_key  String  @db.Text
+    private_key String  @db.Text
+    api_key     String  @default(cuid())
     project     Project @relation(fields: [project_id], references: [id], onDelete: Cascade)
 }
 

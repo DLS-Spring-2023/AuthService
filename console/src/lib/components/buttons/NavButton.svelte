@@ -1,15 +1,15 @@
 <script lang="ts">
-    import { page } from '$app/stores';
-	import ButtonBase from "./ButtonBase.svelte";
-    
-    export let href: string;
+	import { page } from '$app/stores';
+	import ButtonBase from './ButtonBase.svelte';
 
-    $: active = $page.url.pathname === href;
+	export let href: string;
+
+	$: active = $page.url.pathname === href;
 </script>
 
-<ButtonBase 
-    href={href}
-    _class="
+<ButtonBase
+	{href}
+	_class="
         flex
         items-center
         w-full
@@ -20,5 +20,5 @@
         mb-4
     "
 >
-    <slot/>
+	<slot />
 </ButtonBase>

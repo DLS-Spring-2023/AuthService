@@ -3,25 +3,24 @@ import { error } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 
 export const load = (({ params, locals }) => {
+	const fetchProject = async () => {
+		const response = await fetch(`${AUTH_TARGET}/project/${params.project_id}/get`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				accessToken: locals.authTokens?.accessToken
+			})
+		});
 
-    const fetchProject = async () => {
-        const response = await fetch(`${AUTH_TARGET}/project/${params.project_id}/get`, {
-            method: 'POST',
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                accessToken: locals.authTokens?.accessToken
-            })
-        });
-        
-        const data = await response.json();
-        if (!response.ok) {
-            throw error(response.status, { message: data.message });
-        }
-        
-        return data.data;
-    }
+		const data = await response.json();
+		if (!response.ok) {
+			throw error(response.status, { message: data.message });
+		}
 
-    return {
-        project: fetchProject()
-    };
+		return data.data;
+	};
+
+	return {
+		project: fetchProject()
+	};
 }) satisfies LayoutServerLoad;

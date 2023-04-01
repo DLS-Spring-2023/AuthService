@@ -1,5 +1,3 @@
-// ===== Server Settings ==== //
-export interface Settings {
-    allow_multiple_accounts: boolean;
+export interface KeystoreRepo {
+	find(type: 'private' | 'public', project_id?: string): Promise<Buffer | null>;
 }
-

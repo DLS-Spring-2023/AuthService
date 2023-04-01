@@ -4,43 +4,43 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load = (async () => {
-    return {};
+	return {};
 }) satisfies PageServerLoad;
 
 export const actions: Actions = {
-    update: async ({request, fetch, locals}) => {
-        const form = await request.formData();
+	update: async ({ request, fetch, locals }) => {
+		const form = await request.formData();
 		const formData = Object.fromEntries(form);
 
-        let parsedData = Zod.updateAccount.parse(formData);
-        if (parsedData.error) {
-            return fail(400, parsedData);
-        }
+		let parsedData = Zod.updateAccount.parse(formData);
+		if (parsedData.error) {
+			return fail(400, parsedData);
+		}
 
-        const response = await fetch(AUTH_TARGET + '/account/update', {
-            method: 'PUT',
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                accessToken: locals.authTokens?.accessToken,
-                ...parsedData
-            })
-        });
-    },
+		const response = await fetch(AUTH_TARGET + '/account/update', {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				accessToken: locals.authTokens?.accessToken,
+				...parsedData
+			})
+		});
+	},
 
-    delete: async ({request, fetch, locals, cookies}) => {
-        const form = await request.formData();
+	delete: async ({ request, fetch, locals, cookies }) => {
+		const form = await request.formData();
 
-        const response = await fetch(AUTH_TARGET + '/account', {
-            method: 'DELETE',
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                    accessToken: locals.authTokens?.accessToken
-            })
-        });
+		const response = await fetch(AUTH_TARGET + '/account', {
+			method: 'DELETE',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				accessToken: locals.authTokens?.accessToken
+			})
+		});
 
-        if (response.ok) {
-            cookies.delete('account_access_token');
-            cookies.delete('account_session_token');    
-        }
-    }
+		if (response.ok) {
+			cookies.delete('account_access_token');
+			cookies.delete('account_session_token');
+		}
+	}
 };

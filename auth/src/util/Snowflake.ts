@@ -1,2 +1,2 @@
-import Snowflakify from "snowflakify";
+import Snowflakify from 'snowflakify';
 export default new Snowflakify();

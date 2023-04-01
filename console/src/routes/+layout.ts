@@ -1,7 +1,7 @@
-import type { LayoutLoad } from "./$types";
+import type { LayoutLoad } from './$types';
 
 export const load: LayoutLoad = async () => {
-    return {
-        platformName: 'jAuth'
-    }
+	return {
+		platformName: 'jAuth'
+	};
 };
