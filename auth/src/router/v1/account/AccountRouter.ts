@@ -33,7 +33,7 @@ router.post(
 
 		const account = await db.account.create({
 			name,
-			email: email.toLowerCase(),
+			email: (email as string).toLowerCase(),
 			password_hash: password
 		} as Account);
 
@@ -111,12 +111,15 @@ router.put('/update', async (req, res) => {
 	if (parsedData.name) account.name = name;
 	if (parsedData.email) account.email = email;
 	if (parsedData.newPassword) {
-		const verified = await bcrypt.compare(parsedData.oldPassword, account.password_hash as string);
+		const verified = await bcrypt.compare(
+			parsedData.oldPassword as string,
+			account.password_hash as string
+		);
 		if (!verified) {
 			res.status(401).send({ error: true, oldPassword: 'Password incorrect' });
 			return;
 		} else {
-			account.password_hash = await bcrypt.hash(parsedData.newPassword, 12);
+			account.password_hash = await bcrypt.hash(parsedData.newPassword as string, 12);
 		}
 	}
 

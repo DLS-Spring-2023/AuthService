@@ -29,7 +29,7 @@ router.post(
 
 		const user = await db.user.create({
 			name,
-			email: email.toLowerCase(),
+			email: (email as string).toLowerCase(),
 			password_hash: password,
 			project_id: req.project.id
 		} as User);

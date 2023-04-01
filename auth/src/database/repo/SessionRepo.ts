@@ -3,10 +3,8 @@ import { SessionTable } from '../../util/enums.js';
 
 class SessionRepo {
 	private readonly db: any;
-	private readonly table: SessionTable;
 
 	constructor(db: PrismaClient, table: SessionTable) {
-		this.table = table;
 		this.db = table === SessionTable.ACCOUNT ? db.accountSession : db.userSession;
 	}
 
