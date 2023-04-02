@@ -7,8 +7,8 @@ export const authenticateAccount = async (req: Request, res: Response, next: Nex
 	let sessionToken = req.cookies.account_session_token;
 
 	if (!accessToken) accessToken = req.body.accessToken;
-	if (!sessionToken) sessionToken = req.body.sessiontoken;
-
+	if (!sessionToken) sessionToken = req.body.sessionToken;
+	
 	// Verify access token
 	const verifiedAccess = accessToken ? await AccountJWT.verifyAccessToken(accessToken) : null;
 	if (verifiedAccess && verifiedAccess.account.id) {
@@ -145,14 +145,14 @@ export async function loginAccount(req: Request, res: Response) {
 	const account_id = req.body.account.id;
 
 	const session = await AccountJWT.signNewSessionToken(account_id);
-
+	
 	if (!session) {
 		res.status(500).send({ code: 500, message: 'Internal Error' });
 		return;
 	}
 
 	const accessToken = await AccountJWT.signAccessToken(account_id, session?.session_id);
-
+	
 	res.cookie('account_access_token', accessToken, {
 		maxAge: 1000 * 60 * 15 - 10,
 		httpOnly: true,
@@ -162,7 +162,7 @@ export async function loginAccount(req: Request, res: Response) {
 	});
 
 	res.cookie('account_session_token', session.token, {
-		maxAge: 1000 * 60 * 60 * 24 * 365 - 1000 * 10,
+		maxAge: 1000 * 60 * 60 * 24 * 365 - 1000 * 10, // 1 year minus 10 seconds
 		httpOnly: true,
 		secure: true,
 		path: '/',

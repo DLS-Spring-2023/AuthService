@@ -1,20 +1,29 @@
-import { AccountSession, PrismaClient, UserSession } from '@prisma/client';
-import { SessionTable } from '../../util/enums.js';
+import { AccountSession, AccountTokenData, PrismaClient, UserSession, UserTokenData } from '@prisma/client';
+import { SessionType } from '../../util/enums.js';
 
 class SessionRepo {
-	private readonly db: any;
+	private readonly db: PrismaClient;
+	private readonly table: any;
+	private readonly type: SessionType;
 
-	constructor(db: PrismaClient, table: SessionTable) {
-		this.db = table === SessionTable.ACCOUNT ? db.accountSession : db.userSession;
+	constructor(db: PrismaClient, type: SessionType) {
+		this.db = db;
+		this.table = type === SessionType.ACCOUNT ? db.accountSession : db.userSession;
+		this.type = type;
 	}
 
 	/**
 	 * findById
+	 * @param id
+	 * @param token_id
 	 */
-	public async findById(id: bigint): Promise<AccountSession | UserSession> {
-		return await this.db.findUnique({
+	public async findById(id: bigint, token_id: bigint): Promise<AccountSession & { tokenData: AccountTokenData[] } | UserSession & { tokenData: UserTokenData[] } | null> {
+		return await this.table.findUnique({
 			where: {
 				id: id
+			},
+			include: {
+				tokenData: { where: { id: token_id, valid: true } },
 			}
 		});
 	}
@@ -24,11 +33,13 @@ class SessionRepo {
 	 */
 	public async findValidBySessionId(
 		session_id: bigint
-	): Promise<AccountSession | UserSession | undefined> {
-		return await this.db.findFirst({
+	): Promise<AccountSession | UserSession | null> {
+		return await this.table.findFirst({
 			where: {
-				session_id: session_id,
-				valid: true
+				id: session_id,
+			},
+			include: {
+				tokenData: { where: { valid: true } }
 			}
 		});
 	}
@@ -36,55 +47,60 @@ class SessionRepo {
 	/**
 	 * save
 	 */
-	public async startNewSession(session: AccountSession | UserSession): Promise<boolean> {
-		return await this.db.create({
+	public async startNewSession({ id, user_id, token_id }: { id: bigint, user_id: string, token_id: bigint }): Promise<AccountSession & AccountTokenData | UserSession & UserTokenData> {
+
+		return await this.table.create({
 			data: {
-				id: session.id,
-				session_id: session.session_id,
-				user_id: session.user_id,
-				expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 - 1000 * 60) // one year minus a minute
-			}
+				id: id,
+				user_id: user_id,
+				tokenData: {
+					create: {
+						id: token_id,
+						valid: true,
+						expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 - 1000 * 60) // one year minus a minute
+					}
+				}
+			},
 		});
 	}
 
 	/**
 	 * renewSession
 	 */
-	public async renewSession(session: AccountSession | UserSession): Promise<boolean> {
+	public async renewSession(session_id: bigint, token_id: bigint): Promise<any> {
 		// find last valid session iteration
-		const lastIteration = await this.db.findFirst({
+		const session = await this.table.findFirst({
 			where: {
-				session_id: session.session_id,
-				valid: true
+				id: session_id,
 			},
-			orderBy: {
-				iteration: 'desc'
+			include: {
+				tokenData: { where: { valid: true } }
 			}
 		});
 
 		// kill session if no valid iteration is found and return
-		if (!lastIteration) {
-			this.killSession(session.session_id as bigint);
+		if (!session) {
+			this.killSession(session.id);
 			return false;
 		}
 
 		// invalidate earlier iterations
-		await this.db.updateMany({
+		const tokenTable: any = this.type === SessionType.ACCOUNT ? this.db.accountTokenData : this.db.userTokenData;
+		await tokenTable.updateMany({
 			where: {
-				session_id: session.session_id,
-				valid: true
+				session_id: session.id,
+				valid: true,
 			},
 			data: {
 				valid: false
 			}
 		});
 
-		return await this.db.create({
+		return await this.db.accountTokenData.create({
 			data: {
-				id: session.id,
-				session_id: session.session_id,
-				user_id: session.user_id,
-				iteration: lastIteration.iteration + 1,
+				id: token_id,
+				session_id: session.id,
+				iteration: session.tokenData[0].iteration + 1,
 				expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 - 1000 * 60) // one year minus a minute
 			}
 		});
@@ -93,18 +109,18 @@ class SessionRepo {
 	/**
 	 * killSession
 	 */
-	public async killSession(session_id: bigint) {
-		return await this.db.deleteMany({
-			where: { session_id: session_id }
+	public async killSession(id: bigint) {
+		return await this.table.delete({
+			where: { id }
 		});
 	}
 
 	/**
 	 * deleteByUserId
 	 */
-	public async deleteByUserId(id: string) {
-		return await this.db.deleteMany({
-			where: { user_id: id }
+	public async deleteByUserId(user_id: string) {
+		return await this.table.deleteMany({
+			where: { user_id }
 		});
 	}
 }

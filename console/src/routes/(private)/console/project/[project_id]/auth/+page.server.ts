@@ -10,7 +10,7 @@ export const load = (async ({ fetch, params, locals }) => {
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
 				accessToken: locals.authTokens?.accessToken,
-				sessionToken: locals.authTokens?.sessiontoken
+				sessionToken: locals.authTokens?.sessionToken
 			})
 		});
 

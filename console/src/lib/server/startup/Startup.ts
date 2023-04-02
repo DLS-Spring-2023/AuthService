@@ -3,8 +3,8 @@ import Settings from '../settings/Settings';
 
 class Startup {
 	private static async setPublicAccessKey() {
-		const response = await fetch(AUTH_TARGET + '/keys/access');
-		Settings.ACCESS_KEY = response.ok ? await response.text() : '';
+		// const response = await fetch(AUTH_TARGET + '/keys/access');
+		// Settings.ACCESS_KEY = response.ok ? await response.text() : '';
 	}
 
 	static async run() {

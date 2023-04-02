@@ -35,21 +35,21 @@ export const handle: Handle = async ({ resolve, event }) => {
 
 		event.locals.authTokens = {
 			accessToken: data.accessToken,
-			sessiontoken: data.sessionToken
+			sessionToken: data.sessionToken
 		};
 
 		if (data.didTokensRefresh) {
 			event.cookies.set('account_session_token', data.sessionToken, {
 				maxAge: 60 * 60 * 24 * 365 - 10,
 				httpOnly: true,
-				secure: false, // TODO
+				secure: true,
 				path: '/',
 				sameSite: 'strict'
 			});
 			event.cookies.set('account_access_token', data.accessToken, {
 				maxAge: 60 * 15 - 10,
 				httpOnly: true,
-				secure: false, // TODO
+				secure: true,
 				path: '/',
 				sameSite: 'strict'
 			});

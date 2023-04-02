@@ -8,7 +8,8 @@ export const load = (({ params, locals }) => {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
-				accessToken: locals.authTokens?.accessToken
+				accessToken: locals.authTokens?.accessToken,
+				sessionToken: locals.authTokens?.sessionToken
 			})
 		});
 

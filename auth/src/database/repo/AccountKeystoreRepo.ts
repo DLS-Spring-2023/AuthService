@@ -21,8 +21,6 @@ class AccontKeystoreRepo implements KeystoreRepo {
 			return null;
 		}
 
-		console.log(`${new Date()}: [AccountKeystoreRepo] ${type} key found`);
-
 		return RSA.decrypt(
 			Buffer.from(type === 'private' ? keystore.private_key : keystore.public_key, 'hex'),
 			Buffer.from(keystore.iv, 'hex')

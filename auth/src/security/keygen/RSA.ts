@@ -13,15 +13,15 @@ class RSA {
 
 	private static algorithm = 'aes-256-cbc';
 	private static encryptionKey = crypto.scryptSync(
-		process.env.JWT_ENCRYPTION_SECRET || '',
+		process.env.RSA_ENCRYPTION_SECRET || '',
 		'salt',
 		32
 	);
 	private static iv = crypto.randomBytes(16);
 
 	constructor() {
-		if (!process.env.JWT_ENCRYPTION_SECRET) {
-			throw new Error('JWT_ENCRYPTION_SECRET not set');
+		if (!process.env.RSA_ENCRYPTION_SECRET) {
+			throw new Error('RSA_ENCRYPTION_SECRET not set');
 		}
 		this.generate();
 	}
@@ -33,7 +33,11 @@ class RSA {
 
 	static decrypt(data: Buffer, iv: Buffer) {
 		const decipher = crypto.createDecipheriv(this.algorithm, this.encryptionKey, iv);
-		return Buffer.concat([decipher.update(data), decipher.final()]);
+		try {
+			return Buffer.concat([decipher.update(data), decipher.final()]);
+		} catch (e: unknown) {
+			return null;
+		}
 	}
 
 	static getIv() {

@@ -21,10 +21,20 @@ model Account {
 
 model AccountSession {
     id         BigInt  @id
+    user_id    String
+    user    Account @relation(fields: [user_id], references: [id], onDelete: Cascade)
+    created_at DateTime @default(now())
+    os         String?
+    ip         String?
+    location   String?
+    tokenData  AccountTokenData[]
+}
+
+model AccountTokenData {
+    id         BigInt  @id
     session_id BigInt
+    session    AccountSession @relation(fields: [session_id], references: [id], onDelete: Cascade)
     iteration  Int     @default(1)
-    user_id    String  
-    account    Account @relation(fields: [user_id], references: [id], onDelete: Cascade)
     valid      Boolean @default(true)
     expires    DateTime
     @@unique([id, iteration])
@@ -74,10 +84,20 @@ model User {
 
 model UserSession {
     id         BigInt  @id
-    session_id BigInt
-    iteration  Int     @default(1)
     user_id    String
     user       User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+    created_at DateTime @default(now())
+    os         String?
+    ip         String?
+    location   String?
+    tokenData  UserTokenData[]
+}
+
+model UserTokenData {
+    id         BigInt @id
+    session_id BigInt
+    session    UserSession @relation(fields: [session_id], references: [id], onDelete: Cascade)
+    iteration  Int     @default(1)
     valid      Boolean @default(true)
     expires    DateTime
     @@unique([id, iteration])

@@ -11,7 +11,7 @@ export const load = (async ({ params, locals }) => {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					accessToken: locals.authTokens?.accessToken,
-					sessionToken: locals.authTokens?.sessiontoken
+					sessionToken: locals.authTokens?.sessionToken
 				})
 			}
 		);
@@ -45,7 +45,7 @@ export const actions: Actions = {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					accessToken: locals.authTokens?.accessToken,
-					sessionToken: locals.authTokens?.sessiontoken,
+					sessionToken: locals.authTokens?.sessionToken,
 					user: {
 						name,
 						email,
@@ -75,7 +75,7 @@ export const actions: Actions = {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					accessToken: locals.authTokens?.accessToken,
-					sessionToken: locals.authTokens?.sessiontoken
+					sessionToken: locals.authTokens?.sessionToken
 				})
 			}
 		);

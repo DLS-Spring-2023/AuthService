@@ -6,5 +6,5 @@ export interface ConsoleUser {
 
 export interface AuthTokens {
 	accessToken?: string;
-	sessiontoken?: string;
+	sessionToken?: string;
 }

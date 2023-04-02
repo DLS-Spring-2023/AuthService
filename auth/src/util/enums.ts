@@ -1,5 +1,5 @@
 // ==== Database ==== //
-export enum SessionTable {
+export enum SessionType {
 	ACCOUNT = 'account',
 	USER = 'user'
 }

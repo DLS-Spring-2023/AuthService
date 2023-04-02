@@ -37,7 +37,7 @@ class UserRegistration {
 
 	parse(data: unknown) {
 		try {
-			return this.registrationSchema.parse(data);
+			return {...this.registrationSchema.parse(data), error: false}
 		} catch (err: unknown) {
 			const error: { [key: string]: unknown } = {
 				error: true,

@@ -5,7 +5,7 @@ import AccountRepo from '../../database/repo/AccountRepo.js';
 import { KeystoreRepo } from '../../util/interfaces.js';
 import UserRepo from '../../database/repo/UserRepo.js';
 import db from '../../database/DatabaseGateway.js';
-import { SessionTable } from '../../util/enums.js';
+import { SessionType } from '../../util/enums.js';
 import Snowflake from '../../util/Snowflake.js';
 import JwtUtils from './JwUtils.js';
 interface IJWT {
@@ -19,10 +19,10 @@ class JWT extends JwtUtils implements IJWT {
 	private readonly accountRepo: AccountRepo | UserRepo;
 	private readonly keystore: KeystoreRepo;
 
-	constructor(type: SessionTable) {
+	constructor(type: SessionType) {
 		super();
 
-		if (type === SessionTable.ACCOUNT) {
+		if (type === SessionType.ACCOUNT) {
 			this.sessionRepo = db.accountSession;
 			this.accountRepo = db.account;
 			this.keystore = db.accountKeystore;
@@ -51,11 +51,11 @@ class JWT extends JwtUtils implements IJWT {
 	public async signNewSessionToken(user_id: string, projct_id?: string) {
 		const privateKey = await this.keystore.find('private', projct_id);
 		if (!privateKey) return null;
-
-		const id = Snowflake.nextId();
+		
+		const token_id = Snowflake.nextId();
 		const session_id = Snowflake.nextId();
 
-		const payload = { id: String(id), session_id: String(session_id), project_id: projct_id };
+		const payload = { token_id: String(token_id), session_id: String(session_id), project_id: projct_id };
 		const options = { ...JWT.sessionTokenSignOptions, subject: user_id };
 
 		return new Promise<{ token: string; session_id: bigint } | null>((accept) => {
@@ -63,10 +63,10 @@ class JWT extends JwtUtils implements IJWT {
 				if (error || !encoded) accept(null);
 				else {
 					const success = await this.sessionRepo.startNewSession({
-						id,
-						session_id: session_id,
-						user_id
-					} as AccountSession | UserSession);
+						id: session_id,
+						user_id,
+						token_id,
+					});
 					accept(success ? { token: encoded, session_id: session_id } : null);
 				}
 			});
@@ -76,18 +76,17 @@ class JWT extends JwtUtils implements IJWT {
 	private async renewSessionToken(user_id: string, session_id: bigint, project_id?: string) {
 		const privateKey = await this.keystore.find('private', project_id);
 		if (!privateKey) return null;
+		
+		const token_id = Snowflake.nextId();
 
-		const id = Snowflake.nextId();
-		const payload = { id: String(id), session_id: String(session_id), project_id };
+		const payload = { token_id: String(token_id), session_id: String(session_id), project_id };
 		const options = { ...JWT.sessionTokenSignOptions, subject: user_id };
 
 		return new Promise<string | null>((accept) => {
 			jwt.sign(payload, privateKey, options, async (error, encoded) => {
 				if (error || !encoded) accept(null);
 				else {
-					await this.sessionRepo.renewSession({ id, user_id, session_id } as
-						| AccountSession
-						| UserSession);
+					await this.sessionRepo.renewSession(session_id, token_id);
 					accept(encoded);
 				}
 			});
@@ -142,31 +141,34 @@ class JWT extends JwtUtils implements IJWT {
 						return;
 					}
 
-					const { id, session_id, sub, project_id } = decoded as JwtPayload;
-					if (!id || !sub || !session_id) {
+					const { sub, token_id, session_id, project_id } = decoded as JwtPayload;
+					
+					if (!sub || !token_id || !session_id) {
 						accept(null);
 						return;
 					}
 
 					// If account/user doesn't exist or is banned, delete all related session tokens
 					const account = await this.accountRepo.findById(sub);
+					
 					if (!account || !account.enabled) {
 						await this.sessionRepo.deleteByUserId(sub);
 						accept(null);
 						return;
 					}
 
-					const session = await this.sessionRepo.findById(BigInt(id));
-
-					if (!session || !session.expires) {
+					const session = await this.sessionRepo.findById(BigInt(session_id), BigInt(token_id));
+					const tokenData = session?.tokenData[0];
+					
+					if (!session || !tokenData) {
 						accept(null);
 						return;
 					}
 
 					// If token is expired or invalid, kill session
 					const expired =
-						new Date(Number.parseInt(session.expires.toString())).getTime() < Date.now();
-					if (expired || !session.valid) {
+						new Date(Number.parseInt(tokenData.expires.toString())).getTime() < Date.now();
+					if (expired || !tokenData.valid) {
 						this.sessionRepo.killSession(BigInt(session_id));
 						accept(null);
 						return;
@@ -195,6 +197,7 @@ class JWT extends JwtUtils implements IJWT {
 			verified.session_id,
 			verified.project_id
 		);
+		
 		if (!newToken) return null;
 
 		return {
@@ -206,5 +209,5 @@ class JWT extends JwtUtils implements IJWT {
 	}
 }
 
-export const AccountJWT = new JWT(SessionTable.ACCOUNT);
-export const UserJWT = new JWT(SessionTable.USER);
+export const AccountJWT = new JWT(SessionType.ACCOUNT);
+export const UserJWT = new JWT(SessionType.USER);

@@ -12,8 +12,8 @@ class AccountRepo {
 	/**
 	 * count
 	 */
-	public async count(): Promise<bigint> {
-		return BigInt(await this.db.account.count());
+	public async count(): Promise<number> {
+		return await this.db.account.count();
 	}
 
 	/**

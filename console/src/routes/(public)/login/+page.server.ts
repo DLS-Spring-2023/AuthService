@@ -11,9 +11,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, fetch, cookies }) => {
+	default: async ({ request, getClientAddress, fetch, cookies }) => {
 		const form = await request.formData();
 		const formData = Object.fromEntries(form);
+		
+		const userAgent = request.headers.get('user-agent');
+		const userIp = getClientAddress();
 
 		const parsedData = Zod.login.parse(formData);
 
@@ -43,7 +46,7 @@ export const actions: Actions = {
 			path: '/',
 			sameSite: 'strict'
 		});
-
+		
 		cookies.set('account_session_token', data.sessionToken, {
 			maxAge: 60 * 60 * 24 * 365 - 10,
 			httpOnly: true,

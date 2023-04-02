@@ -23,6 +23,7 @@ export const actions: Actions = {
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
 				accessToken: locals.authTokens?.accessToken,
+				sessionToken: locals.authTokens?.sessionToken,
 				project: {
 					name: name
 				}
@@ -49,7 +50,8 @@ export const actions: Actions = {
 			method: 'DELETE',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
-				accessToken: locals.authTokens?.accessToken
+				accessToken: locals.authTokens?.accessToken,
+				sessionToken: locals.authTokens?.sessionToken
 			})
 		});
 
