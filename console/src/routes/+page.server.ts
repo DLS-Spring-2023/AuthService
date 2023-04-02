@@ -1,4 +1,3 @@
-import Settings from '$lib/server/settings/Settings';
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 

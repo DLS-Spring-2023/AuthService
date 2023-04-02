@@ -3,7 +3,7 @@
 
 	export let type: 'reset' | 'button' | 'submit' = 'submit';
 	export let href: string | undefined = undefined;
-	export let onClick: () => void = () => {};
+	export let onClick: (() => void) | undefined;
 	export let _class = 'p-2';
 	export let loading = false;
 	export let disabled = false;

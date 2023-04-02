@@ -38,16 +38,12 @@ class UserRegistration {
 	parse(data: unknown) {
 		try {
 			return this.registrationSchema.parse(data);
-		} catch (err: any) {
-			const error: { [key: string]: any } = {
+		} catch (err: unknown) {
+			const error: { [key: string]: unknown } = {
 				error: true,
-				message: err.errors[0].message
+				message: (err as { errors: { message: string }[] }).errors[0].message
 			};
 			return error;
-			// for (const error of err.errors) {
-			//     log[error.path[0]] = { message: error.message };
-			// }
-			// return log;
 		}
 	}
 }

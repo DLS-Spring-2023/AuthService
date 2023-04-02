@@ -19,7 +19,7 @@
 	let re_newPassword = '';
 
 	let loading = false;
-	let form: any = {};
+	let form: Record<string, { [key: string]: string }> | undefined = {};
 
 	const reset = () => {
 		name = consoleUser.name;
@@ -42,8 +42,12 @@
 					break;
 				case 'failure':
 					form = result.data;
-					if (form.error && form.message) {
-						toast.push({ type: ToastType.warning, message: form.message, removeOnNavigate: true });
+					if (form?.error && form.message) {
+						toast.push({
+							type: ToastType.warning,
+							message: form.message as unknown as string,
+							removeOnNavigate: true
+						});
 					}
 					loading = false;
 					break;
@@ -64,7 +68,7 @@
 				<Input id="name" name="name" type="text" bind:value={name} />
 			</div>
 			<code class="ml-2 w-64 text-sm h-full flex items-center text-red-600"
-				>{form.name ? form.name.message : ''}</code
+				>{form?.name ? form.name.message : ''}</code
 			>
 
 			<!-- EMAIL -->
@@ -73,7 +77,7 @@
 				<Input id="email" name="email" type="text" bind:value={email} />
 			</div>
 			<code class="ml-2 w-64 text-sm h-full flex items-center text-red-600"
-				>{form.email ? form.email.message : ''}</code
+				>{form?.email ? form.email.message : ''}</code
 			>
 
 			<!-- OLD PASSWORD -->
@@ -88,7 +92,7 @@
 				/>
 			</div>
 			<code class="ml-2 w-64 text-sm h-full flex items-center text-red-600"
-				>{form.oldPassword ? form.oldPassword.message : ''}</code
+				>{form?.oldPassword ? form.oldPassword.message : ''}</code
 			>
 
 			<!-- NEW PASSWORD -->
@@ -103,7 +107,7 @@
 				/>
 			</div>
 			<code class="ml-2 w-64 text-sm h-full flex items-center text-red-600"
-				>{form.newPassword ? form.newPassword.message : ''}</code
+				>{form?.newPassword ? form.newPassword.message : ''}</code
 			>
 
 			<!-- REPEAT NEW PASSWORD -->
@@ -120,7 +124,7 @@
 				/>
 			</div>
 			<code class="ml-2 w-64 text-sm h-full flex items-center text-red-600"
-				>{form.re_newPassword ? form.re_newPassword.message : ''}</code
+				>{form?.re_newPassword ? form.re_newPassword.message : ''}</code
 			>
 
 			<!-- SUBMIT -->

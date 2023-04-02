@@ -1,5 +1,4 @@
 import { AUTH_TARGET } from '$env/static/private';
-import Settings from '$lib/server/settings/Settings';
 import Startup from '$lib/server/startup/Startup';
 import { redirect, type Handle } from '@sveltejs/kit';
 

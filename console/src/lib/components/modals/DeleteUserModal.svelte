@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { page } from '$app/stores';
 	import { enhance, type SubmitFunction } from '$app/forms';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import ExclamationTriangle from 'svelte-icons/fa/FaExclamationTriangle.svelte';
 	import CancelButton from '../buttons/CancelButton.svelte';
 	import DeleteButton from '../buttons/DeleteButton.svelte';
@@ -27,14 +26,14 @@
 					break;
 				case 'failure':
 					toast.push({ type: ToastType.error, message: result.data?.message, closeAfter: 2000 });
-				default:
-					loading = false;
+					break;
 			}
+			loading = false;
 		};
 	};
 </script>
 
-<ModalBase onRequestClose={!loading ? onRequestClose : () => {}}>
+<ModalBase onRequestClose={!loading ? onRequestClose : undefined}>
 	<div class="p-4 text-center max-w-sm">
 		<h3 class="text-red-600 font-medium flex justify-between items-center">
 			<div class="w-fit h-8"><ExclamationTriangle /></div>

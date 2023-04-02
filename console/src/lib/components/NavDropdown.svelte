@@ -20,7 +20,7 @@
 	};
 
 	const clickOutside = (node: any) => {
-		const handleClick = (event: any) => {
+		const handleClick = (event: Event) => {
 			if (!node.contains(event.target)) {
 				// Timeout ensure event happens on open/close button before outside click event
 				setTimeout(() => node.dispatchEvent(new CustomEvent('outclick')));

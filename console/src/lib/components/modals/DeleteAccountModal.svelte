@@ -21,7 +21,7 @@
 	};
 </script>
 
-<ModalBase onRequestClose={!loading ? onRequestClose : () => {}}>
+<ModalBase onRequestClose={!loading ? onRequestClose : undefined}>
 	<div class="p-4 text-center max-w-sm">
 		<h3 class="text-red-600 font-medium flex justify-between items-center">
 			<div class="w-fit h-8"><ExclamationTriangle /></div>

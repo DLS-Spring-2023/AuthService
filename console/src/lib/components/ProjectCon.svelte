@@ -1,8 +1,7 @@
 <script lang="ts">
 	import Plus from 'svelte-icons/fa/FaPlus.svelte';
-	import Delete from 'svelte-icons/md/MdDeleteForever.svelte';
 
-	export let data: any | undefined = undefined;
+	export let data: { id: string; name: string } | undefined = undefined;
 	export let onClick: (() => void) | undefined = undefined;
 </script>
 

@@ -2,7 +2,7 @@
 	import ButtonBase from './ButtonBase.svelte';
 
 	export let type: 'reset' | 'button' | 'submit' = 'submit';
-	export let onClick: () => void = () => {};
+	export let onClick: (() => void) | undefined = undefined;
 	export let disabled = false;
 	export let loading = false;
 	export let w: number | undefined = undefined;

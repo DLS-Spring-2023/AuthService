@@ -33,7 +33,7 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const formData = Object.fromEntries(form);
 
-		let parsedData = Zod.userRegistration.parse(formData);
+		const parsedData = Zod.userRegistration.parse(formData);
 
 		if (parsedData.error) {
 			return fail(400, parsedData);

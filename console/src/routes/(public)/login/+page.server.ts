@@ -2,7 +2,6 @@ import { fail, redirect, type Actions } from '@sveltejs/kit';
 
 import Zod from '$lib/server/utils/zod/Zod';
 import type { PageServerLoad } from './$types';
-import Settings from '$lib/server/settings/Settings';
 import { AUTH_TARGET } from '$env/static/private';
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -16,7 +15,7 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const formData = Object.fromEntries(form);
 
-		let parsedData = Zod.login.parse(formData);
+		const parsedData = Zod.login.parse(formData);
 
 		if (parsedData.error) {
 			return fail(400, parsedData);
@@ -40,7 +39,7 @@ export const actions: Actions = {
 		cookies.set('account_access_token', data.accessToken, {
 			maxAge: 60 * 15 - 10,
 			httpOnly: true,
-			secure: false, // TODO
+			secure: true,
 			path: '/',
 			sameSite: 'strict'
 		});
@@ -48,7 +47,7 @@ export const actions: Actions = {
 		cookies.set('account_session_token', data.sessionToken, {
 			maxAge: 60 * 60 * 24 * 365 - 10,
 			httpOnly: true,
-			secure: false, // TODO
+			secure: true,
 			path: '/',
 			sameSite: 'strict'
 		});

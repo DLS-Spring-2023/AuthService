@@ -3,8 +3,7 @@
 	import Exclamation from 'svelte-icons/fa/FaExclamation.svelte';
 	import Times from 'svelte-icons/fa/FaTimes.svelte';
 	import Close from 'svelte-icons/md/MdClose.svelte';
-	import { fly, crossfade } from 'svelte/transition';
-	import { quintOut } from 'svelte/easing';
+	import { fly } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
 	import store, { ToastType, type ToastProps } from '$lib/store/toast';
 	import { beforeNavigate } from '$app/navigation';
@@ -13,21 +12,21 @@
 
 	store.store.subscribe((value) => (toasts = value));
 
-	const [send, receive] = crossfade({
-		fallback(node, params) {
-			const style = getComputedStyle(node);
-			const transform = style.transform === 'none' ? '' : style.transform;
+	// const [send, receive] = crossfade({
+	// 	fallback(node, params) {
+	// 		const style = getComputedStyle(node);
+	// 		const transform = style.transform === 'none' ? '' : style.transform;
 
-			return {
-				duration: 600,
-				easing: quintOut,
-				css: (t) => `
-					transform: ${transform} scale(${t});
-					opacity: ${t}
-				`
-			};
-		}
-	});
+	// 		return {
+	// 			duration: 600,
+	// 			easing: quintOut,
+	// 			css: (t) => `
+	// 				transform: ${transform} scale(${t});
+	// 				opacity: ${t}
+	// 			`
+	// 		};
+	// 	}
+	// });
 
 	const getBackground = (type: ToastType) => {
 		return type === ToastType.success

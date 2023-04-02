@@ -1,5 +1,5 @@
 class Settings {
-	ACCESS_KEY: string = '';
+	ACCESS_KEY = '';
 }
 
 export default new Settings();

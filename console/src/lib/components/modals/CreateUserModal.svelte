@@ -37,7 +37,7 @@
 	};
 </script>
 
-<ModalBase onRequestClose={loading ? () => {} : onRequestClose}>
+<ModalBase onRequestClose={loading ? undefined : onRequestClose}>
 	<div class="p-8 max-w-lg">
 		<div class="flex justify-between">
 			<h3 class="mr-64">Create User</h3>

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
 
-	export let onRequestClose: () => void;
+	export let onRequestClose: undefined | (() => void);
 
 	const disableScroll = (node: any) => {
 		const handler = (e: Event) => e.preventDefault();

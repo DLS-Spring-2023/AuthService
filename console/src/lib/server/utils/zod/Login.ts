@@ -20,10 +20,10 @@ class Login {
 
 	parse(data: unknown) {
 		try {
-			return this.registrationSchema.parse(data);
-		} catch (err: any) {
-			const log: { [key: string]: any } = { error: true };
-			for (const error of err.errors) {
+			return { ...this.registrationSchema.parse(data), error: false };
+		} catch (err: unknown) {
+			const log: { [key: string]: boolean | { [key: string]: string } } = { error: true };
+			for (const error of (err as { errors: { path: string[]; message: string }[] }).errors) {
 				log[error.path[0]] = { message: error.message };
 			}
 			return log;

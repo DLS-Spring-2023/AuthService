@@ -9,7 +9,7 @@
 	const { data } = $page;
 
 	let loading = false;
-	let form: any = {};
+	let form: Record<string, { [key: string]: string }> | undefined = {};
 
 	const submit: SubmitFunction = () => {
 		form = {};
@@ -22,8 +22,12 @@
 			}
 			if (result.type === 'failure') {
 				form = result.data;
-				if (form.error && form.message) {
-					toast.push({ type: ToastType.warning, message: form.message, removeOnNavigate: true });
+				if (form?.error && form.message) {
+					toast.push({
+						type: ToastType.warning,
+						message: form.message as unknown as string,
+						removeOnNavigate: true
+					});
 				}
 				loading = false;
 			}
@@ -45,7 +49,7 @@
 					required
 					value={data.autofill_name}
 				/>
-				{#if form.error && form.name}
+				{#if form?.error && form.name}
 					<p class="text-red-600 dark:text-red-500 text-xs ml-1 absolute -bottom-4">
 						{form.name.message}
 					</p>
@@ -62,7 +66,7 @@
 					required
 					value={data.autofill_email}
 				/>
-				{#if form.error && form.email}
+				{#if form?.error && form.email}
 					<p class="text-red-600 dark:text-red-500 text-xs ml-1 absolute -bottom-4">
 						{form.email.message}
 					</p>
@@ -79,7 +83,7 @@
 					required
 					value={data.autofill_password}
 				/>
-				{#if form.error && form.password}
+				{#if form?.error && form.password}
 					<p class="text-red-600 dark:text-red-500 text-xs ml-1 absolute -bottom-4">
 						{form.password.message}
 					</p>
@@ -96,7 +100,7 @@
 					required
 					value={data.autofill_re_password}
 				/>
-				{#if form.error && form.re_password}
+				{#if form?.error && form.re_password}
 					<p class="text-red-600 dark:text-red-500 text-xs ml-1 absolute -bottom-4">
 						{form.re_password.message}
 					</p>

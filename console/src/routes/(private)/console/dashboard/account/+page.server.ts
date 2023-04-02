@@ -1,6 +1,6 @@
 import { AUTH_TARGET } from '$env/static/private';
 import Zod from '$lib/server/utils/zod/Zod';
-import { fail, redirect } from '@sveltejs/kit';
+import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load = (async () => {
@@ -12,12 +12,12 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const formData = Object.fromEntries(form);
 
-		let parsedData = Zod.updateAccount.parse(formData);
+		const parsedData = Zod.updateAccount.parse(formData);
 		if (parsedData.error) {
 			return fail(400, parsedData);
 		}
 
-		const response = await fetch(AUTH_TARGET + '/account/update', {
+		await fetch(AUTH_TARGET + '/account/update', {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
@@ -27,9 +27,7 @@ export const actions: Actions = {
 		});
 	},
 
-	delete: async ({ request, fetch, locals, cookies }) => {
-		const form = await request.formData();
-
+	delete: async ({ fetch, locals, cookies }) => {
 		const response = await fetch(AUTH_TARGET + '/account', {
 			method: 'DELETE',
 			headers: { 'Content-Type': 'application/json' },
