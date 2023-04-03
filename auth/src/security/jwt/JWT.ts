@@ -51,24 +51,16 @@ class JWT extends JwtUtils implements IJWT {
 	public async signNewSessionToken(user_id: string, projct_id?: string) {
 		const privateKey = await this.keystore.find('private', projct_id);
 		if (!privateKey) return null;
-		
-		const token_id = Snowflake.nextId();
-		const session_id = Snowflake.nextId();
 
-		const payload = { token_id: String(token_id), session_id: String(session_id), project_id: projct_id };
+		const session = await this.sessionRepo.startNewSession(user_id);
+		if (!session) return null;
+
+		const payload = { token_id: String(session.tokenData[0].id), session_id: String(session.id), project_id: projct_id };
 		const options = { ...JWT.sessionTokenSignOptions, subject: user_id };
 
 		return new Promise<{ token: string; session_id: bigint } | null>((accept) => {
-			jwt.sign(payload, privateKey, options, async (error, encoded) => {
-				if (error || !encoded) accept(null);
-				else {
-					const success = await this.sessionRepo.startNewSession({
-						id: session_id,
-						user_id,
-						token_id,
-					});
-					accept(success ? { token: encoded, session_id: session_id } : null);
-				}
+			jwt.sign(payload, privateKey, options, (error, encoded) => {
+				accept(error || !encoded ? null : { token: encoded, session_id: session.id });
 			});
 		});
 	}
@@ -77,18 +69,15 @@ class JWT extends JwtUtils implements IJWT {
 		const privateKey = await this.keystore.find('private', project_id);
 		if (!privateKey) return null;
 		
-		const token_id = Snowflake.nextId();
+		const session = await this.sessionRepo.renewSession(session_id);
+		if (!session) return null;
 
-		const payload = { token_id: String(token_id), session_id: String(session_id), project_id };
+		const payload = { token_id: String(session.tokenData[0].id), session_id: String(session_id), project_id };
 		const options = { ...JWT.sessionTokenSignOptions, subject: user_id };
 
 		return new Promise<string | null>((accept) => {
-			jwt.sign(payload, privateKey, options, async (error, encoded) => {
-				if (error || !encoded) accept(null);
-				else {
-					await this.sessionRepo.renewSession(session_id, token_id);
-					accept(encoded);
-				}
+			jwt.sign(payload, privateKey, options, (error, encoded) => {
+				accept(error || !encoded ? null : encoded);
 			});
 		});
 	}
@@ -97,87 +86,74 @@ class JWT extends JwtUtils implements IJWT {
 		const publicKey = await this.keystore.find('public', JwtUtils.decodeToken(token).project_id);
 		if (!publicKey) return null;
 
-		return new Promise<{ session_id: bigint; account: Account | User } | null>((accept) => {
-			jwt.verify(token, publicKey, JWT.accessTokenVerifyOptions, async (error, decoded) => {
-				if (error) {
-					accept(null);
-					return;
-				}
-
-				const { session_id, sub } = decoded as JwtPayload;
-
-				if (!session_id || !sub) {
-					accept(null);
-					return;
-				}
-
-				const account = await this.accountRepo.findById(sub);
-				if (!account || !account.enabled) {
-					accept(null);
-					return;
-				}
-
-				const accountSession = await this.sessionRepo.findValidBySessionId(BigInt(session_id));
-				if (!accountSession) {
-					accept(null);
-					return;
-				}
-
-				accept({ session_id, account });
+		const decoded = await new Promise<JwtPayload | null>((accept) => {
+			jwt.verify(token, publicKey, JWT.accessTokenVerifyOptions, (error, decoded) => {
+				accept(error || !decoded ? null : decoded as JwtPayload);
 			});
 		});
+
+		const { session_id, sub } = decoded as JwtPayload;
+
+		if (!session_id || !sub) {
+			return null;
+		}
+
+		const account = await this.accountRepo.findById(sub);
+		if (!account || !account.enabled) {
+			return null;
+		}
+
+		const accountSession = await this.sessionRepo.findValidBySessionId(BigInt(session_id));
+		if (!accountSession) {
+			return null;
+		}
+
+		return { session_id, account };
 	}
 
 	private async verifySessionToken(token: string) {
 		const publicKey = await this.keystore.find('public', JwtUtils.decodeToken(token).project_id);
 		if (!publicKey) return null;
 
-		return new Promise<{ session_id: bigint; account: Account | User; project_id?: string } | null>(
-			(accept) => {
-				jwt.verify(token, publicKey, JWT.sessionTokenVerifyOptions, async (error, decoded) => {
-					if (error) {
-						console.error('RefreshToken:', 'VerifyError -', error);
-						accept(null);
-						return;
-					}
+		const decoded = await new Promise<JwtPayload | null>((accept) => {
+			jwt.verify(token, publicKey, JWT.sessionTokenVerifyOptions, async (error, decoded) => {
+				if (error) {
+					console.error('RefreshToken:', 'VerifyError -', error);
+					accept(error || !decoded ? null : decoded as JwtPayload);
+				}
+			});
+		});
 
-					const { sub, token_id, session_id, project_id } = decoded as JwtPayload;
+		const { sub, token_id, session_id, project_id } = decoded as JwtPayload;
 					
-					if (!sub || !token_id || !session_id) {
-						accept(null);
-						return;
-					}
+		if (!sub || !token_id || !session_id) {
+			return null;
+		}
 
-					// If account/user doesn't exist or is banned, delete all related session tokens
-					const account = await this.accountRepo.findById(sub);
-					
-					if (!account || !account.enabled) {
-						await this.sessionRepo.deleteByUserId(sub);
-						accept(null);
-						return;
-					}
+		// If account/user doesn't exist or is banned, delete all related session tokens
+		const account = await this.accountRepo.findById(sub);
+		
+		if (!account || !account.enabled) {
+			await this.sessionRepo.deleteByUserId(sub);
+			return null;
+		}
 
-					const session = await this.sessionRepo.findById(BigInt(session_id), BigInt(token_id));
-					const tokenData = session?.tokenData[0];
-					
-					if (!session || !tokenData) {
-						accept(null);
-						return;
-					}
+		const session = await this.sessionRepo.findById(BigInt(session_id), BigInt(token_id));
+		const tokenData = session?.tokenData[0];
+		
+		if (!session || !tokenData) {
+			return null;
+		}
 
-					// If token is expired or invalid, kill session
-					const expired =
-						new Date(Number.parseInt(tokenData.expires.toString())).getTime() < Date.now();
-					if (expired || !tokenData.valid) {
-						this.sessionRepo.killSession(BigInt(session_id));
-						accept(null);
-						return;
-					}
+		// If token is expired or invalid, kill session
+		const expired =
+			new Date(Number.parseInt(tokenData.expires.toString())).getTime() < Date.now();
+		if (expired || !tokenData.valid) {
+			this.sessionRepo.killSession(BigInt(session_id));
+			return null;
+		}
 
-					accept({ session_id: BigInt(session_id), account, project_id });
-				});
-			}
-		);
+		return { session_id: BigInt(session_id), account, project_id };
 	}
 
 	/**

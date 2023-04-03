@@ -1,5 +1,6 @@
 import { AccountSession, AccountTokenData, PrismaClient, UserSession, UserTokenData } from '@prisma/client';
 import { SessionType } from '../../util/enums.js';
+import Snowflake from '../../util/Snowflake.js';
 
 class SessionRepo {
 	private readonly db: PrismaClient;
@@ -47,8 +48,9 @@ class SessionRepo {
 	/**
 	 * save
 	 */
-	public async startNewSession({ id, user_id, token_id }: { id: bigint, user_id: string, token_id: bigint }): Promise<AccountSession & AccountTokenData | UserSession & UserTokenData> {
-
+	public async startNewSession(user_id: string): Promise<AccountSession & {tokenData: AccountTokenData[]} | UserSession & {tokenData: UserTokenData[]} | null> {
+		const id = Snowflake.nextId();
+		const token_id = Snowflake.nextId();
 		return await this.table.create({
 			data: {
 				id: id,
@@ -57,17 +59,20 @@ class SessionRepo {
 					create: {
 						id: token_id,
 						valid: true,
-						expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 - 1000 * 60) // one year minus a minute
+						expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365) // one year
 					}
 				}
 			},
-		});
+			include: {
+				tokenData: { where: { id: token_id } }
+			}
+		}).catch(() => null);
 	}
 
 	/**
 	 * renewSession
 	 */
-	public async renewSession(session_id: bigint, token_id: bigint): Promise<any> {
+	public async renewSession(session_id: bigint): Promise<AccountSession & {tokenData: AccountTokenData[]} | UserTokenData & {tokenData: UserTokenData[]} | null> {
 		// find last valid session iteration
 		const session = await this.table.findFirst({
 			where: {
@@ -79,29 +84,43 @@ class SessionRepo {
 		});
 
 		// kill session if no valid iteration is found and return
-		if (!session) {
+		if (!session || !session.tokenData.length) {
 			this.killSession(session.id);
-			return false;
+			return null;
 		}
 
 		// invalidate earlier iterations
-		const tokenTable: any = this.type === SessionType.ACCOUNT ? this.db.accountTokenData : this.db.userTokenData;
-		await tokenTable.updateMany({
+		await this.table.update({
 			where: {
-				session_id: session.id,
-				valid: true,
+				id: session.id
 			},
-			data: {
-				valid: false
-			}
+			data: { tokenData: { updateMany: {
+				where: {
+					valid: true
+				},
+				data: {
+					valid: false
+				}
+			}}}
 		});
 
-		return await this.db.accountTokenData.create({
+		// create new iteration
+		const token_id = Snowflake.nextId();
+		return await this.table.update({
+			where: {
+				id: session.id
+			},
 			data: {
-				id: token_id,
-				session_id: session.id,
-				iteration: session.tokenData[0].iteration + 1,
-				expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 - 1000 * 60) // one year minus a minute
+				tokenData: {
+					create: {
+						id: token_id,
+						iteration: session.tokenData[0].iteration + 1,
+						expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365) // one year
+					}
+				}
+			},
+			include: {
+				tokenData: { where: { id: token_id } }
 			}
 		});
 	}
