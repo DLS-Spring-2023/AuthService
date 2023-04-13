@@ -1,3 +1,4 @@
 .vscode
 
-/auth/keystore
+.env
+!.env.example
