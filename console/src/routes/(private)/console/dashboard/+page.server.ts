@@ -28,7 +28,7 @@ export const load: PageServerLoad = async ({ locals, fetch }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, fetch }) => {
+	default: async ({ request, locals, fetch }) => {
 		const form = await request.formData();
 		const formData = Object.fromEntries(form);
 
@@ -41,7 +41,11 @@ export const actions: Actions = {
 		const response = await fetch(AUTH_TARGET + '/project/create', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(parsedData)
+			body: JSON.stringify({
+				...parsedData, 
+				accessToken: locals.authTokens?.accessToken, 
+				sessionToken: locals.authTokens?.sessionToken
+			})
 		});
 
 		if (!response.ok) {

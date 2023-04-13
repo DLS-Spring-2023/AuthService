@@ -18,6 +18,7 @@
 			switch (result.type) {
 				case 'redirect':
 					store.push({ type: ToastType.success, message: 'Project deleted', closeAfter: 2000 });
+					onRequestClose();
 					goto(result.location);
 					break;
 				case 'failure':

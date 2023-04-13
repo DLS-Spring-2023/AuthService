@@ -29,7 +29,7 @@ export const authenticateAccount = async (req: Request, res: Response, next: Nex
 	const verifiedSession = sessionToken
 		? await AccountJWT.validateAndRenewSession(sessionToken)
 		: null;
-
+	
 	if (!verifiedSession || !verifiedSession.token || !verifiedSession.account.id) {
 		res.status(401).send({ code: 401, message: 'Unauthorized' });
 		return;
@@ -174,6 +174,8 @@ export async function loginAccount(req: Request, res: Response) {
 		accessToken: accessToken,
 		sessionToken: session.token
 	});
+
+	saveUserAgent(session.session_id, req);
 }
 
 export async function loginUser(req: Request, res: Response) {
@@ -209,6 +211,8 @@ export async function loginUser(req: Request, res: Response) {
 		accessToken: accessToken,
 		sessionToken: session.token
 	});
+
+	saveUserAgent(session.session_id, req);
 }
 
 export const verifyProject = async (req: Request, res: Response, next: NextFunction) => {
@@ -227,3 +231,22 @@ export const verifyProject = async (req: Request, res: Response, next: NextFunct
 	req.project = project;
 	next();
 };
+
+function saveUserAgent(session_id: bigint, req: Request) { // Save client information
+	try {
+		const ip = (req.headers['x-forwarded-for'] || req.headers['x-forwarded-for'] || req.socket.remoteAddress) as string | undefined;
+		const os = req.headers['x-forwarded-os'] as string; 
+		const browser = req.headers['x-forwarded-browser'] as string;
+		
+		db.accountSession.updateUserAgent(session_id, {
+			ip,
+			os,
+			browser,
+			location: undefined
+		});
+	} catch(e) {
+		// console.log(e);
+		
+	}
+}
+

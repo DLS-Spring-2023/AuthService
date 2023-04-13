@@ -24,8 +24,9 @@ model AccountSession {
     user_id    String
     user    Account @relation(fields: [user_id], references: [id], onDelete: Cascade)
     created_at DateTime @default(now())
-    os         String?
     ip         String?
+    os         String?
+    browser    String?
     location   String?
     tokenData  AccountTokenData[]
 }
@@ -87,8 +88,9 @@ model UserSession {
     user_id    String
     user       User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
     created_at DateTime @default(now())
-    os         String?
     ip         String?
+    os         String?
+    browser    String?
     location   String?
     tokenData  UserTokenData[]
 }

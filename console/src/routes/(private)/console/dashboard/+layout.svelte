@@ -12,6 +12,7 @@
 	<div class="absolute flex w-full justify-center bottom-0">
 		<MenuItem href="/console/dashboard">Projects</MenuItem>
 		<MenuItem href="/console/dashboard/account">Account</MenuItem>
+		<MenuItem href="/console/dashboard/sessions">Sessions</MenuItem>
 	</div>
 </div>
 

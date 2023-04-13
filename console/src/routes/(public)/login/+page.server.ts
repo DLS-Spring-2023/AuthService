@@ -3,6 +3,7 @@ import { fail, redirect, type Actions } from '@sveltejs/kit';
 import Zod from '$lib/server/utils/zod/Zod';
 import type { PageServerLoad } from './$types';
 import { AUTH_TARGET } from '$env/static/private';
+import UAParser from '$lib/server/utils/parsing/UAParser';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (locals.consoleUser) {
@@ -11,12 +12,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, getClientAddress, fetch, cookies }) => {
+	default: async ({ request, getClientAddress, fetch, cookies, platform }) => {
 		const form = await request.formData();
 		const formData = Object.fromEntries(form);
-		
-		const userAgent = request.headers.get('user-agent');
-		const userIp = getClientAddress();
 
 		const parsedData = Zod.login.parse(formData);
 
@@ -24,9 +22,24 @@ export const actions: Actions = {
 			return fail(400, parsedData);
 		}
 
+		const uaParser = new UAParser(request.headers);
+		const { browser, os } = uaParser.getResults();
+		// console.log(browser, os);
+		
+		const headers = { 
+			'Content-Type': 'application/json',
+			'User-Agent': request.headers.get('user-agent') || '',
+			'x-forwarded-for': getClientAddress(),
+			'x-forwarded-browser': browser || '',
+			'x-forwarded-os': os || '',
+		};
+
+		console.log(headers);
+		
+
 		const response = await fetch(AUTH_TARGET + '/account/login', {
 			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
+			headers,
 			body: JSON.stringify({
 				email: parsedData.email,
 				password: parsedData.password

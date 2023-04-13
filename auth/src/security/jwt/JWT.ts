@@ -92,6 +92,8 @@ class JWT extends JwtUtils implements IJWT {
 			});
 		});
 
+		if (!decoded) return null;
+
 		const { session_id, sub } = decoded as JwtPayload;
 
 		if (!session_id || !sub) {
@@ -114,15 +116,15 @@ class JWT extends JwtUtils implements IJWT {
 	private async verifySessionToken(token: string) {
 		const publicKey = await this.keystore.find('public', JwtUtils.decodeToken(token).project_id);
 		if (!publicKey) return null;
-
+		
 		const decoded = await new Promise<JwtPayload | null>((accept) => {
 			jwt.verify(token, publicKey, JWT.sessionTokenVerifyOptions, async (error, decoded) => {
-				if (error) {
-					console.error('RefreshToken:', 'VerifyError -', error);
-					accept(error || !decoded ? null : decoded as JwtPayload);
-				}
+				error && console.error('RefreshToken:', 'VerifyError -', error.message);
+				accept(error || !decoded ? null : decoded as JwtPayload);
 			});
 		});
+		
+		if (!decoded) return null;
 
 		const { sub, token_id, session_id, project_id } = decoded as JwtPayload;
 					

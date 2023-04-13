@@ -26,9 +26,9 @@ router.post('/create', async (req, res) => {
 	}
 
 	const project = await db.project.create(name, req.auth.user.id);
-
+	
 	// Test for create error
-	if (!project || project.id) {
+	if (!project || !project.id) {
 		res.status(500).send({ code: 500, message: 'Internal Error' });
 		return;
 	}
@@ -44,7 +44,7 @@ router.post('/:id/get', async (req, res) => {
 		res.status(404).send({ code: 404, message: 'Not Found' });
 		return;
 	}
-
+	
 	if (project.account_id !== req.auth.user.id) {
 		res.status(401).send({ code: 401, message: 'Unauthorized' });
 		return;

@@ -3,6 +3,8 @@ import keyRouter from './keys/KeyRouter.js';
 import accountRouter from './account/AccountRouter.js';
 import projectRouter from './project/ProjectRouter.js';
 import userAuthRouter from './user/UserRouter.js';
+import accountSessionRouter from './sessions/accountSessionRouter.js';
+import userSessionRouter from './sessions/userSessionRouter.js';
 
 const router = Router();
 
@@ -10,5 +12,7 @@ router.use('/keys', keyRouter);
 router.use('/account', accountRouter);
 router.use('/project', projectRouter);
 router.use('/user', userAuthRouter);
+router.use('/session/account', accountSessionRouter);
+router.use('/session/user', userSessionRouter);
 
 export default router;

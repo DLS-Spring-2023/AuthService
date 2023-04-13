@@ -2,6 +2,8 @@ import { AccountSession, AccountTokenData, PrismaClient, UserSession, UserTokenD
 import { SessionType } from '../../util/enums.js';
 import Snowflake from '../../util/Snowflake.js';
 
+type UserAgent = { ip?: string, browser?: string, os?: string, location?: string };
+
 class SessionRepo {
 	private readonly db: PrismaClient;
 	private readonly table: any;
@@ -11,6 +13,16 @@ class SessionRepo {
 		this.db = db;
 		this.table = type === SessionType.ACCOUNT ? db.accountSession : db.userSession;
 		this.type = type;
+	}
+
+	/**
+	 * findByUserId
+	 * @param user_id
+	 */
+	public async findByUserId(user_id: string): Promise<(AccountSession & { tokenData: AccountTokenData[] }) | (UserSession & { tokenData: UserTokenData[] }) | null> {
+		return await this.table.findMany({
+			where: { user_id },
+		});
 	}
 
 	/**
@@ -124,6 +136,14 @@ class SessionRepo {
 			}
 		});
 	}
+
+	public async updateUserAgent(session_id: bigint, { ip, os, browser, location }: UserAgent) {
+		return await this.db.accountSession.update({
+			where: { id: session_id },
+			data: { ip, os, browser, location }
+		});
+	}
+
 
 	/**
 	 * killSession
