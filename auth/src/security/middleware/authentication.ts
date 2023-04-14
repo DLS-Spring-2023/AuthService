@@ -241,9 +241,6 @@ function saveUserAgent(session_id: bigint, req: Request, type: 'account' | 'user
 		if (!os || !browser) {
 			const ua = new UAParser(req);
 			const results = ua.getResults();
-			console.log(req.socket.remoteAddress);
-			
-			
 			if (!os) os = results.os as string;
 			if (!browser) browser = results.browser as string;
 		}
