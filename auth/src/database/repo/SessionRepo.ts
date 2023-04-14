@@ -138,9 +138,12 @@ class SessionRepo {
 	}
 
 	public async updateUserAgent(session_id: bigint, { ip, os, browser, location }: UserAgent) {
-		return await this.db.accountSession.update({
+		return await this.table.update({
 			where: { id: session_id },
 			data: { ip, os, browser, location }
+		}).catch((err:any) => {
+			console.log(err);
+			return null;
 		});
 	}
 
@@ -151,7 +154,7 @@ class SessionRepo {
 	public async killSession(id: bigint) {
 		return await this.table.delete({
 			where: { id }
-		});
+		}).catch(() => null);
 	}
 
 	/**
@@ -160,7 +163,7 @@ class SessionRepo {
 	public async deleteByUserId(user_id: string) {
 		return await this.table.deleteMany({
 			where: { user_id }
-		});
+		}).catch(() => null);
 	}
 }
 

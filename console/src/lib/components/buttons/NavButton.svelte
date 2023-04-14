@@ -8,6 +8,7 @@
 </script>
 
 <ButtonBase
+    onClick={undefined}
 	{href}
 	_class="
         flex

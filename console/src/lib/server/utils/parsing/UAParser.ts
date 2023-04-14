@@ -1,4 +1,4 @@
-import { UAParser as UAParserType, type IResult } from 'ua-parser-js';
+import { UAParser as UAParserType } from 'ua-parser-js';
 
 type CustomResult = {
     browser?: string,

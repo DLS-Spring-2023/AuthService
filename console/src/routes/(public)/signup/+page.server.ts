@@ -2,6 +2,7 @@ import { AUTH_TARGET } from '$env/static/private';
 import Zod from '$lib/server/utils/zod/Zod';
 import { fail, redirect, type Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import UAParser from '$lib/server/utils/parsing/UAParser';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	if (locals.consoleUser) {
@@ -10,7 +11,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, fetch, cookies }) => {
+	default: async ({ request, fetch, cookies, getClientAddress }) => {
 		const form = await request.formData();
 		const formData = Object.fromEntries(form);
 
@@ -19,6 +20,17 @@ export const actions: Actions = {
 		if (parsedData.error) {
 			return fail(400, parsedData);
 		}
+
+		const uaParser = new UAParser(request.headers);
+		const { browser, os } = uaParser.getResults();
+		
+		const headers = { 
+			'Content-Type': 'application/json',
+			'User-Agent': request.headers.get('user-agent') || '',
+			'x-forwarded-for': getClientAddress(),
+			'x-forwarded-browser': browser || '',
+			'x-forwarded-os': os || '',
+		};
 
 		const response = await fetch(AUTH_TARGET + '/account/create', {
 			method: 'POST',

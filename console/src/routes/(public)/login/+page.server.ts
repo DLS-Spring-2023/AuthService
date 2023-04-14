@@ -24,7 +24,6 @@ export const actions: Actions = {
 
 		const uaParser = new UAParser(request.headers);
 		const { browser, os } = uaParser.getResults();
-		// console.log(browser, os);
 		
 		const headers = { 
 			'Content-Type': 'application/json',
@@ -33,9 +32,6 @@ export const actions: Actions = {
 			'x-forwarded-browser': browser || '',
 			'x-forwarded-os': os || '',
 		};
-
-		console.log(headers);
-		
 
 		const response = await fetch(AUTH_TARGET + '/account/login', {
 			method: 'POST',

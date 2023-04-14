@@ -8,7 +8,9 @@
 	import DeleteUserModal from '$lib/components/modals/DeleteUserModal.svelte';
 	import { createUserModal, deleteUserModal } from '$lib/store/modals';
 	import { onMount } from 'svelte';
+	import MenuItem from '$lib/components/MenuItem.svelte';
 
+	$: route = $page.route.id;
 	$: project = $page.data.project;
 
 	let title: string;
@@ -34,6 +36,9 @@
 		createUserModal.subscribe((value) => (showCreateUserModal = value));
 		deleteUserModal.subscribe((value) => (showDeleteUserModal = value));
 	});
+
+	
+	
 </script>
 
 <div class="relative w-full min-h-full flex">
@@ -62,6 +67,22 @@
 	<div class="w-full h-full" style="padding-left: 200px">
 		<div class="bg-dark brightness-110 h-44 border-bottom pt-16 pl-20">
 			<h2 class="font-medium">{title}</h2>
+
+			{#if route?.startsWith('/(private)/console/project/[project_id]/auth/[user_id]')}
+				<div class="absolute flex w-full justify-center bottom-0 -left-0">
+					<MenuItem
+						href="/console/project/{project.id}/auth/{$page.params.user_id}"
+					>
+						User
+					</MenuItem>
+					<MenuItem
+						href="/console/project/{project.id}/auth/{$page.params.user_id}/sessions"
+					>
+						Sessions
+					</MenuItem>
+				</div>
+
+			{/if}
 		</div>
 		<slot />
 	</div>

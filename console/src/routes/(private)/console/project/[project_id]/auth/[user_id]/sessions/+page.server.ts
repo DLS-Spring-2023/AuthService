@@ -1,16 +1,19 @@
 import { AUTH_TARGET } from '$env/static/private';
 import type { PageServerLoad } from './$types';
 
-export const load = (async ({locals, fetch}) => {
+export const load = (async ({locals, params}) => {
 
     const { authTokens } = locals;
     const fetchSessions = async () => {
-        const response = await fetch(AUTH_TARGET + '/session/account', {
+        const response = await fetch(AUTH_TARGET + `/session/account/user/${params.user_id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ authTokens })
+            body: JSON.stringify({ 
+                accessToken: authTokens?.accessToken,
+                sessionToken: authTokens?.sessionToken
+             })
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             return data;

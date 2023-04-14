@@ -8,7 +8,7 @@ export const authenticateAccount = async (req: Request, res: Response, next: Nex
 
 	if (!accessToken) accessToken = req.body.accessToken;
 	if (!sessionToken) sessionToken = req.body.sessionToken;
-	
+
 	// Verify access token
 	const verifiedAccess = accessToken ? await AccountJWT.verifyAccessToken(accessToken) : null;
 	if (verifiedAccess && verifiedAccess.account.id) {
@@ -211,8 +211,8 @@ export async function loginUser(req: Request, res: Response) {
 		accessToken: accessToken,
 		sessionToken: session.token
 	});
-
-	saveUserAgent(session.session_id, req);
+	
+	saveUserAgent(session.session_id, req, 'user');
 }
 
 export const verifyProject = async (req: Request, res: Response, next: NextFunction) => {
@@ -232,21 +232,60 @@ export const verifyProject = async (req: Request, res: Response, next: NextFunct
 	next();
 };
 
-function saveUserAgent(session_id: bigint, req: Request) { // Save client information
+function saveUserAgent(session_id: bigint, req: Request, type: 'account' | 'user' = 'account') { // Save client information
 	try {
-		const ip = (req.headers['x-forwarded-for'] || req.headers['x-forwarded-for'] || req.socket.remoteAddress) as string | undefined;
-		const os = req.headers['x-forwarded-os'] as string; 
-		const browser = req.headers['x-forwarded-browser'] as string;
+		let ip = (req.headers['x-forwarded-for'] || req.headers['x-forwarded-for'] || req.socket.remoteAddress) as string | undefined;
+		let os = req.headers['x-forwarded-os'] as string; 
+		let browser = req.headers['x-forwarded-browser'] as string;
 		
-		db.accountSession.updateUserAgent(session_id, {
-			ip,
-			os,
-			browser,
-			location: undefined
-		});
+		if (!os || !browser) {
+			const ua = new UAParser(req);
+			const results = ua.getResults();
+			console.log(req.socket.remoteAddress);
+			
+			
+			if (!os) os = results.os as string;
+			if (!browser) browser = results.browser as string;
+		}
+
+		const data = {ip, os, browser, location: undefined};
+		
+		if (type === 'account') db.accountSession.updateUserAgent(session_id, data);
+		else db.userSession.updateUserAgent(session_id, data);
 	} catch(e) {
 		// console.log(e);
 		
 	}
 }
 
+
+// UA Parser - TODO: Move to separate file
+import { UAParser as UAParserType } from 'ua-parser-js';
+type CustomResult = { browser?: string, os?: string }
+class UAParser extends UAParserType {
+    private headers;
+
+    constructor(req: Request) {
+        super(req.headers['user-agent'] || '');
+        this.headers = req.headers;
+    }
+    
+    getResults(): CustomResult {
+        const results = this.getResult();
+        const browser = this.headers['sec-ch-ua'] as string;
+        const platform = this.headers['sec-ch-ua-platform'] as string;
+		
+        if (browser) {
+            results.browser.name = browser.split(';')[0].replace(/"/g, '');
+        }
+
+        if (platform) {
+            results.os.name = platform.replace(/"/g, '');
+        }
+		
+        return {
+            browser: results.browser.name || results.ua,
+            os: results.os.name
+        };
+    }
+}

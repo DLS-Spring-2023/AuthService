@@ -1,7 +1,7 @@
 <script lang="ts">
     import { page } from '$app/stores';
 	import SessionTable from '$lib/components/SessionTable.svelte';
-
+    
     $: sessions = $page.data.sessions;
 </script>
 
