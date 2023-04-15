@@ -13,7 +13,8 @@ export const load = (async ({locals, fetch}) => {
         
         if (response.ok) {
             const data = await response.json();
-            return data;
+            console.log(data);
+            return data.data;
         } else return [];
     }
 

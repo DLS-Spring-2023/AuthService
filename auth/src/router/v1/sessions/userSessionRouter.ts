@@ -36,7 +36,7 @@ router.use(authenticateUser, verifyProject);
 router.post('/', async (req, res) => {
     // get user sessions
     const sessions = await db.userSession.findByUserId(req.auth.user.id);
-    res.send(JSON.stringify(sessions, (_, value) => typeof value === 'bigint' ? value.toString() : value));
+    res.send({ data: sessions.map(session => ({...session, id: session.id.toString()})) });
 });
 
 /**

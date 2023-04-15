@@ -19,7 +19,7 @@ class SessionRepo {
 	 * findByUserId
 	 * @param user_id
 	 */
-	public async findByUserId(user_id: string): Promise<(AccountSession & { tokenData: AccountTokenData[] }) | (UserSession & { tokenData: UserTokenData[] }) | null> {
+	public async findByUserId(user_id: string): Promise<(AccountSession & { tokenData: AccountTokenData[] })[] | (UserSession & { tokenData: UserTokenData[] })[]> {
 		return await this.table.findMany({
 			where: { user_id },
 		});

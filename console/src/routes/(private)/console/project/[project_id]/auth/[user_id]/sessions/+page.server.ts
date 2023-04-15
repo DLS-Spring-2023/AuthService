@@ -16,7 +16,7 @@ export const load = (async ({locals, params}) => {
 
         if (response.ok) {
             const data = await response.json();
-            return data;
+            return data.data;
         } else return [];
     }
 

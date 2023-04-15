@@ -61,7 +61,7 @@ router.use(authenticateAccount);
 router.post('/', async (req, res) => {
     // get account sessions
     const sessions = await db.accountSession.findByUserId(req.auth.user.id);
-    res.send({ data: JSON.stringify(sessions, (_, value) => typeof value === 'bigint' ? value.toString() : value) });
+    res.send({ data: sessions.map(session => ({...session, id: session.id.toString()})) });
 });
 
 /**
@@ -94,6 +94,10 @@ router.post('/', async (req, res) => {
 // delete account session (/session/account/:session_id)
 router.delete('/:session_id', async (req, res) => {
     // delete session
+    if (!req.params.session_id) {
+        return res.status(400).send({ error: 'Missing session ID' });
+    }
+
     await db.accountSession.killSession(BigInt(req.params.session_id));
     res.status(204).send();
 });
@@ -131,7 +135,7 @@ router.delete('/:session_id', async (req, res) => {
 router.post('/user/:user_id', async (req, res) => {
     // get user sessions
     const sessions = await db.userSession.findByUserId(req.params.user_id);
-    res.send(JSON.stringify(sessions, (_, value) => typeof value === 'bigint' ? value.toString() : value));
+    res.send({ data: sessions.map(session => ({...session, id: session.id.toString()})) });
 });
 
 
