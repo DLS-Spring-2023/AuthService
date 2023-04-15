@@ -1,11 +1,37 @@
 import { Router } from 'express';
-import { authenticateUser } from '../../../security/middleware/authentication.js';
+import { authenticateUser, verifyProject } from '../../../security/middleware/authentication.js';
 import db from '../../../database/DatabaseGateway.js';
 
 const router = Router();
 
-router.use(authenticateUser)
+router.use(authenticateUser, verifyProject);
 
+/**
+ * @openapi
+ * /v1/session/user:
+ *   post:
+ *     summary: Get user's sessions
+ *     security:
+ *       - AccessToken: []
+ *         SessionToken: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/API_KEY'
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Session'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *     tags:
+ *       - Session (User access)
+ */ 
 // get user sessions (/session/user)
 router.post('/', async (req, res) => {
     // get user sessions
@@ -13,6 +39,29 @@ router.post('/', async (req, res) => {
     res.send(JSON.stringify(sessions, (_, value) => typeof value === 'bigint' ? value.toString() : value));
 });
 
+/**
+ * @openapi
+ * /v1/session/user/{session_id}:
+ *   delete:
+ *     summary: Delete user session
+ *     security:
+ *       - AccessToken: []
+ *         SessionToken: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/API_KEY'
+ *     responses:
+ *       204:
+ *         description: No Content
+ *         
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ErrorResponse'
+ *     tags:
+ *       - Session (User access)
+ */
 // delete user session (/session/user/:session_id)
 router.delete('/:session_id', async (req, res) => {
     // delete session

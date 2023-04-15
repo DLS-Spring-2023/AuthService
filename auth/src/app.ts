@@ -23,14 +23,14 @@ declare module 'express-serve-static-core' {
 // Initialize Database
 await db.init();
 
-const server = express();
+const app = express();
 
-server.use(express.json());
-server.use(cookies());
+app.use(express.json());
+app.use(cookies());
 
-server.use(router);
+app.use(router);
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+app.listen(PORT, () => {
 	console.log('Auth server came online at port', PORT);
 });

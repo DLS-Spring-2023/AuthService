@@ -1,10 +1,6 @@
 import jwt, { SignOptions, VerifyOptions, Algorithm, JwtPayload } from 'jsonwebtoken';
 
 class JwtUtils {
-	public static readonly publicAccessKey = Buffer.from(
-		process.env.PUBLIC_ACCESS_KEY || ''
-	).toString();
-
 	protected static accessTokenSignOptions: SignOptions = {
 		issuer: 'jAuth',
 		expiresIn: '15m',

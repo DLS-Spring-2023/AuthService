@@ -9,7 +9,51 @@ import { Account } from '@prisma/client';
 
 const router = Router();
 
-// Create Account (/v1/account/create)
+/**
+ * @openapi
+ * /v1/account/create:
+ *   post:
+ *     summary: Create a new account
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateAccountRequest'
+ *     responses:
+ *       201:
+ *         description: Created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       400:
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Forbidden
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       409:
+ *         description: Conflict
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *     tags:
+ *       - Account
+ */
 router.post(
 	'/create',
 	async (req, res, next) => {
@@ -53,7 +97,46 @@ router.post(
 	loginAccount
 );
 
-// Login (/v1/account/login)
+/**
+ * @openapi
+ * /v1/account/login:
+ *   post:
+ *     summary: Log in to an account
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginAccountRequest'
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       400:
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ * 
+ *     tags:
+ *       - Account
+ */
 router.post(
 	'/login',
 	async (req, res, next) => {
@@ -82,12 +165,96 @@ router.post(
 // ===== Protected route below this point ===== //
 router.use(authenticateAccount);
 
-// Get Account (/v1/account)
+/**
+ * @openapi
+ * /v1/account:
+ *   post:
+ *     summary: Get account information. Requires authentication.
+ *     description: Get information about the authenticated account.
+ *     security:
+ *       - AccountAccessToken: []
+ *         AccountSessionToken: []
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthenticationResponse'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ * 
+ *     tags:
+ *       - Account
+ */
 router.post('/', (req, res) => {
 	res.send({ ...req.auth });
 });
 
-// Update Account (/v1/account/update)
+/**
+* @openapi
+* /v1/account/update:
+*   put:
+*     summary: Update Account. Requires authentication.
+*     description: Update account with new name, email, or password. Each field is optional, but newPassword requires oldPassword.
+*     security:
+*       - AccountAccessToken: []
+*         AccountSessionToken: []
+*     requestBody:
+*       content:
+*         application/json:
+*           schema:
+*             $ref: '#/components/schemas/UpdateAccountRequest'
+*     responses:
+*       200:
+*         description: OK
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/AuthenticatedResponse'
+*       400:
+*         description: Bad Request
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ErrorResponse'
+*       401:
+*         description: Unauthorized
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ErrorResponse'
+*       404:
+*         description: Not Found
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ErrorResponse'
+*       409:
+*         description: Conflict
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ErrorResponse'
+*       500:
+*         description: Internal Server Error
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ErrorResponse'
+*     tags:
+*       - Account
+*/
 router.put('/update', async (req, res) => {
 	const { name, email, oldPassword, newPassword } = req.body;
 
@@ -139,7 +306,32 @@ router.put('/update', async (req, res) => {
 	res.send({ ...req.auth });
 });
 
-// Kill session (/v1/account/logout)
+/**
+* @openapi
+* /v1/account/logout:
+*   post:
+*     summary: Kill Session. Requires authentication.
+*     description: Kill user session by deleting the session from the database.
+*     security:
+*       - AccountAccessToken: []
+*         AccountSessionToken: []
+*     responses:
+*       204:
+*         description: No Content
+*       401:
+*         description: Unauthorized
+*         content:
+*           application/json:
+*             schema:
+*               type: object
+*               properties:
+*                 message:
+*                   type: string
+*                 code:
+*                   type: integer
+*     tags:
+*       - Account
+*/
 router.post('/logout', async (req, res) => {
 	const { sessionToken } = req.auth;
 
@@ -148,7 +340,33 @@ router.post('/logout', async (req, res) => {
 	res.status(204).send();
 });
 
-// Delete account (/v1/account)
+/**
+* @openapi
+* /v1/account:
+*   delete:
+*     summary: Delete Account. Requires authentication.
+*     description: Delete user account from the database.
+*     security:
+*       - AccountAccessToken: []
+*         AccountSessionToken: []
+*     responses:
+*       204:
+*         description: No Content
+*       401:
+*         description: Unauthorized
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ErrorResponse'
+*       500:
+*         description: Internal Server Error
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ErrorResponse'
+*     tags:
+*       - Account
+*/
 router.delete('/', async (req, res) => {
 	const success = await db.account.delete({ id: req.auth.user.id } as Account);
 	const status = success ? 204 : 500;

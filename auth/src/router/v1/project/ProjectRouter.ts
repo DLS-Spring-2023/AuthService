@@ -10,13 +10,89 @@ const router = Router();
 
 router.use(authenticateAccount);
 
-// Get all personal projects (/v1/project)
+/**
+* @openapi
+* /v1/project:
+*   post:
+*     summary: Get Projects
+*     description: Retrieve all projects belonging to the authenticated account.
+*     security:
+*       - AccountAccessToken: []
+*         AccountSessionToken: []
+*     parameters:
+*       - $ref: '#/components/parameters/API_KEY'
+*     responses:
+*       200:
+*         description: OK
+*         content:
+*           application/json:
+*             schema:
+*               type: object
+*               properties:
+*                 data:
+*                   type: array
+*                   items:
+*                     $ref: '#/components/schemas/Project'
+*       401:
+*         description: Unauthorized
+*         content:
+*           application/json:
+*             schema:
+*               type: object
+*               properties:
+*                 message:
+*                   type: string
+*                 code:
+*                   type: integer
+*
+*     tags:
+*       - Project
+*/
 router.post('/', async (req, res) => {
 	const projects = await db.project.findByAccountId(req.auth.user.id);
 	res.send({ data: projects });
 });
 
-// Create new project (/v1/project/create)
+/**
+* @openapi
+* /v1/project/create:
+*   post:
+*     summary: Create Project
+*     description: Create a new project belonging to the authenticated account.
+*     security:
+*       - AccountAccessToken: []
+*         AccountSessionToken: []
+*     requestBody:
+*       required: true
+*       content:
+*         application/json:
+*           schema:
+*             type: object
+*             properties:
+*               name:
+*                 type: string
+*     responses:
+*       200:
+*         description: OK
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/Project'
+*       400:
+*         description: Bad Request
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ErrorResponse'
+*       500:
+*         description: Internal Error
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ErrorResponse'
+*     tags:
+*       - Project
+*/
 router.post('/create', async (req, res) => {
 	const { name } = req.body;
 
@@ -36,7 +112,47 @@ router.post('/create', async (req, res) => {
 	res.send({ ...req.auth, data: project });
 });
 
-// Get project by id (/v1/project/:id/get)
+/**
+* @openapi
+* /v1/project/{id}/get:
+*   post:
+*     summary: Get Project by ID
+*     description: Retrieve a specific project by its ID if it belongs to the authenticated account.
+*     security:
+*       - AccountAccessToken: []
+*         AccountSessionToken: []
+*     parameters:
+*       - in: path
+*         name: id
+*         required: true
+*         description: ID of the project to retrieve.
+*         schema:
+*           type: string
+*     responses:
+*       200:
+*         description: OK
+*         content:
+*           application/json:
+*             schema:
+*               type: object
+*               properties:
+*                 data:
+*                   $ref: '#/components/schemas/Project'
+*       401:
+*         description: Unauthorized
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ErrorResponse'
+*       404:
+*         description: Not Found
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ErrorResponse'
+*     tags:
+*       - Project
+*/
 router.post('/:id/get', async (req, res) => {
 	const project = await db.project.findById(req.params.id);
 
@@ -53,7 +169,67 @@ router.post('/:id/get', async (req, res) => {
 	res.send({ ...req.auth, data: project });
 });
 
-// Update project (/v1/project/:id)
+/**
+* @openapi
+* /v1/project/{id}:
+*   put:
+*     summary: Update Project by ID
+*     description: Update a project with the specified ID if it belongs to the authenticated account.
+*     security:
+*       - AccountAccessToken: []
+*         AccountSessionToken: []
+*     parameters:
+*       - in: path
+*         name: id
+*         required: true
+*         description: ID of the project to update.
+*         schema:
+*           type: string
+*       - in: body
+*         name: project
+*         required: true
+*         description: The project data to update.
+*         schema:
+*           type: object
+*           properties:
+*             name:
+*               type: string
+*     requestBody:
+*       content:
+*         application/json:
+*           schema:
+*             type: object
+*             properties:
+*               name:
+*                 type: string
+*     responses:
+*       200:
+*         description: OK
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/Project'
+*       401:
+*         description: Unauthorized
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ErrorResponse'
+*       404:
+*         description: Not Found
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ErrorResponse'
+*       500:
+*         description: Internal Server Error
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ErrorResponse'
+*     tags:
+*       - Project
+*/
 router.put('/:id', async (req, res) => {
 	const projectData = req.body.project as Project;
 
@@ -84,10 +260,49 @@ router.put('/:id', async (req, res) => {
 		return;
 	}
 
-	res.send({ ...req.auth });
+	res.send({ ...req.auth, data: result });
 });
 
-// Delete project (/v1/project/:id)
+/**
+* @openapi
+* /v1/project/{id}:
+*   delete:
+*     summary: Delete Project by ID
+*     description: Delete a project with the specified ID if it belongs to the authenticated account.
+*     security:
+*       - AccountAccessToken: []
+*         AccountSessionToken: []
+*     parameters:
+*       - in: path
+*         name: id
+*         required: true
+*         description: ID of the project to delete.
+*         schema:
+*           type: string
+*     responses:
+*       204:
+*         description: No Content
+*       401:
+*         description: Unauthorized
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ErrorResponse'
+*       404:
+*         description: Not Found
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ErrorResponse'
+*       500:
+*         description: Internal Server Error
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ErrorResponse'
+*     tags:
+*       - Project
+*/
 router.delete('/:id', async (req, res) => {
 	const project = await db.project.findById(req.params.id);
 
@@ -129,7 +344,49 @@ router.post('/:id/users', async (req, res) => {
 	res.send({ ...req.auth, data: users });
 });
 
-// Find project user by ID (/v1/project/:project_id/users/:user_id)
+/**
+* @openapi
+* /v1/project/{project_id}/users/{user_id}:
+*   post:
+*     summary: Get Project Users
+*     description: Get a list of users associated with the project identified by ID.
+*     security:
+*       - AccountAccessToken: []
+*         AccountSessionToken: []
+*     parameters:
+*       - in: path
+*         name: id
+*         required: true
+*         description: ID of the project.
+*         schema:
+*           type: string
+*     responses:
+*       200:
+*         description: OK
+*         content:
+*           application/json:
+*             schema:
+*               type: object
+*               properties:
+*                 data:
+*                   type: array
+*                   items:
+*                     $ref: '#/components/schemas/User'
+*       401:
+*         description: Unauthorized
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ErrorResponse'
+*       404:
+*         description: Not Found
+*         content:
+*           application/json:
+*             schema:
+*               $ref: '#/components/schemas/ErrorResponse'
+*     tags:
+*       - Project
+*/
 router.post('/:project_id/users/:user_id', async (req, res) => {
 	const project = await db.project.findById(req.params.project_id);
 
@@ -154,6 +411,90 @@ router.post('/:project_id/users/:user_id', async (req, res) => {
 	res.send({ ...req.auth, data: user });
 });
 
+/**
+ * @openapi
+ * /v1/project/{project_id}/users/{user_id}:
+ *   put:
+ *     summary: Edit project user
+ *     description: Edit a user associated with the project identified by ID.
+ *     security:
+ *       - AccountAccessToken: []
+ *         AccountSessionToken: []
+ *     parameters:
+ *       - in: path
+ *         name: project_id
+ *         required: true
+ *         description: ID of the project.
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: user_id
+ *         required: true
+ *         description: ID of the user.
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               user:
+ *                 type: object
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                   email:
+ *                     type: string
+ *                   password:
+ *                     type: string
+ *                   enabled:
+ *                     type: boolean
+ *                   verified:
+ *                     type: boolean
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Not Found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       409:
+ *         description: Conflict
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *     tags:
+ *       - Project
+ */
 router.put('/:project_id/users/:user_id', async (req, res) => {
 	const project = await db.project.findById(req.params.project_id);
 
@@ -243,9 +584,49 @@ router.put('/:project_id/users/:user_id', async (req, res) => {
 		return;
 	}
 
-	res.send({ ...req.auth });
+	res.send({ ...req.auth, data: result });
 });
 
+/**
+ * @openapi
+ * /v1/project/{project_id}/users/{user_id}:
+ *   delete:
+ *     summary: Delete Project User
+ *     description: Delete a user associated with the project identified by ID.
+ *     security:
+ *       - AccountAccessToken: []
+ *         AccountSessionToken: []
+ *     parameters:
+ *       - in: path
+ *         name: project_id
+ *         required: true
+ *         description: ID of the project.
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: user_id
+ *         required: true
+ *         description: ID of the user.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       204:
+ *         description: No Content
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Not Found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *     tags:
+ *       - Project
+ */
 router.delete('/:project_id/users/:user_id', async (req, res) => {
 	const project = await db.project.findById(req.params.project_id);
 
