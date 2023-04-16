@@ -1,24 +1,18 @@
-import { AUTH_TARGET } from '$env/static/private';
+import { GET } from '$lib/server/utils/fetch';
 import type { PageServerLoad } from './$types';
 
-export const load = (async ({locals, fetch}) => {
+export const load = (async ({ locals }) => {
+	const { authTokens } = locals;
+	const fetchSessions = async () => {
+		const response = await GET('/session/account', authTokens || {});
 
-    const { authTokens } = locals;
-    const fetchSessions = async () => {
-        const response = await fetch(AUTH_TARGET + '/session/account', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ authTokens })
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            console.log(data);
-            return data.data;
-        } else return [];
-    }
+		if (response.ok) {
+			const data = await response.json();
+			return data.data;
+		} else return [];
+	};
 
-    return {
-        sessions: fetchSessions()
-    };
+	return {
+		sessions: fetchSessions()
+	};
 }) satisfies PageServerLoad;

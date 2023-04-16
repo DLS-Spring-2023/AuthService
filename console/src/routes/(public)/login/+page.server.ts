@@ -12,7 +12,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, getClientAddress, fetch, cookies, platform }) => {
+	default: async ({ request, getClientAddress, fetch, cookies }) => {
 		const form = await request.formData();
 		const formData = Object.fromEntries(form);
 
@@ -24,13 +24,13 @@ export const actions: Actions = {
 
 		const uaParser = new UAParser(request.headers);
 		const { browser, os } = uaParser.getResults();
-		
-		const headers = { 
+
+		const headers = {
 			'Content-Type': 'application/json',
 			'User-Agent': request.headers.get('user-agent') || '',
 			'x-forwarded-for': getClientAddress(),
 			'x-forwarded-browser': browser || '',
-			'x-forwarded-os': os || '',
+			'x-forwarded-os': os || ''
 		};
 
 		const response = await fetch(AUTH_TARGET + '/account/login', {
@@ -42,21 +42,22 @@ export const actions: Actions = {
 			})
 		});
 
-		const data = await response.json();
-
 		if (!response.ok) {
+			const data = await response.json();
 			return fail(data.code, { error: true, message: data.message });
 		}
 
-		cookies.set('account_access_token', data.accessToken, {
+		const tokens = response.headers.get('Authorization')?.split(', ') || [];
+
+		cookies.set('access_token', tokens[0].split(' ')[1], {
 			maxAge: 60 * 15 - 10,
 			httpOnly: true,
 			secure: true,
 			path: '/',
 			sameSite: 'strict'
 		});
-		
-		cookies.set('account_session_token', data.sessionToken, {
+
+		cookies.set('session_token', tokens[1].split(' ')[1], {
 			maxAge: 60 * 60 * 24 * 365 - 10,
 			httpOnly: true,
 			secure: true,

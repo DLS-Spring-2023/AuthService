@@ -2,29 +2,6 @@ import { Router } from 'express';
 import { authenticateAccount } from '../../../security/middleware/authentication.js';
 import db from '../../../database/DatabaseGateway.js';
 
-/**
- * @openapi
- * components:
- *   schemas:
- *     Session:
- *       type: object
- *       properties:
- *         id: 
- *           type: string
- *         user_id:
- *           type: string
- *         created_at:
- *           type: string
- *         ip:
- *           type: string
- *         os:
- *           type: string
- *         browser:
- *           type: string
- *         location:
- *           type: string
- */
-
 const router = Router();
 
 router.use(authenticateAccount);
@@ -32,11 +9,10 @@ router.use(authenticateAccount);
 /**
  * @openapi
  * /v1/session/account:
- *   post:
+ *   get:
  *     summary: Get account sessions
  *     security:
- *      - AccountAccessToken: []
- *        AccountSessionToken: []
+ *       - Authorization: []
  *     responses:
  *       200:
  *         description: OK
@@ -44,7 +20,7 @@ router.use(authenticateAccount);
  *           application/json:
  *             schema:
  *               type: object
- *               properties:    
+ *               properties:
  *                 data:
  *                   type: array
  *                   items:
@@ -58,10 +34,10 @@ router.use(authenticateAccount);
  *     tags:
  *      - Session (Account access)
  */
-router.post('/', async (req, res) => {
-    // get account sessions
-    const sessions = await db.accountSession.findByUserId(req.auth.user.id);
-    res.send({ data: sessions.map(session => ({...session, id: session.id.toString()})) });
+router.get('/', async (req, res) => {
+	// get account sessions
+	const sessions = await db.accountSession.findByUserId(req.auth.user.id);
+	res.send({ data: sessions.map((session) => ({ ...session, id: session.id.toString() })) });
 });
 
 /**
@@ -70,8 +46,7 @@ router.post('/', async (req, res) => {
  *   delete:
  *     summary: Delete account session
  *     security:
- *       - AccountAccessToken: []
- *         AccountSessionToken: []
+ *       - Authorization: []
  *     parameters:
  *       - in: path
  *         name: session_id
@@ -91,25 +66,23 @@ router.post('/', async (req, res) => {
  *     tags:
  *       - Session (Account access)
  */
-// delete account session (/session/account/:session_id)
 router.delete('/:session_id', async (req, res) => {
-    // delete session
-    if (!req.params.session_id) {
-        return res.status(400).send({ error: 'Missing session ID' });
-    }
+	// delete session
+	if (!req.params.session_id) {
+		return res.status(400).send({ error: 'Missing session ID' });
+	}
 
-    await db.accountSession.killSession(BigInt(req.params.session_id));
-    res.status(204).send();
+	await db.accountSession.killSession(BigInt(req.params.session_id));
+	res.status(204).send();
 });
 
 /**
  * @openapi
  * /v1/session/account/user/{session_id}:
- *   post:
+ *   get:
  *     summary: Get user sessions
  *     security:
- *      - AccountAccessToken: []
- *        AccountSessionToken: []
+ *       - Authorization: []
  *     responses:
  *       200:
  *         description: OK
@@ -117,7 +90,7 @@ router.delete('/:session_id', async (req, res) => {
  *           application/json:
  *             schema:
  *               type: object
- *               properties:    
+ *               properties:
  *                 data:
  *                   type: array
  *                   items:
@@ -131,13 +104,11 @@ router.delete('/:session_id', async (req, res) => {
  *     tags:
  *      - Session (Account access)
  */
-// get user sessions (/session/user/:user_id)
-router.post('/user/:user_id', async (req, res) => {
-    // get user sessions
-    const sessions = await db.userSession.findByUserId(req.params.user_id);
-    res.send({ data: sessions.map(session => ({...session, id: session.id.toString()})) });
+router.get('/user/:user_id', async (req, res) => {
+	// get user sessions
+	const sessions = await db.userSession.findByUserId(req.params.user_id);
+	res.send({ data: sessions.map((session) => ({ ...session, id: session.id.toString() })) });
 });
-
 
 /**
  * @openapi
@@ -145,8 +116,7 @@ router.post('/user/:user_id', async (req, res) => {
  *   delete:
  *     summary: Delete user session
  *     security:
- *       - AccessToken: []
- *         SessionToken: []
+ *       - Authorization: []
  *     parameters:
  *       - in: path
  *         name: session_id
@@ -166,12 +136,10 @@ router.post('/user/:user_id', async (req, res) => {
  *     tags:
  *       - Session (Account access)
  */
-// delete user session (/session/user/:session_id)
 router.delete('/user/:session_id', async (req, res) => {
-    // delete session
-    await db.userSession.killSession(BigInt(req.params.session_id));
-    res.status(204).send();
+	// delete session
+	await db.userSession.killSession(BigInt(req.params.session_id));
+	res.status(204).send();
 });
-
 
 export default router;

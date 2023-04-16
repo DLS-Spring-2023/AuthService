@@ -14,8 +14,44 @@ const router = Router();
 
 router.use(verifyProject);
 
+/**
+ * @openapi
+ * /v1/user:
+ *   post:
+ *     summary: Create a new user
+ *     parameters:
+ *       - $ref: '#/components/parameters/API_KEY'
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateUserRequest'
+ *     responses:
+ *       201:
+ *         description: User created
+ *       400:
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       409:
+ *         description: Email already in use
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: An unknown error occurred
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *     tags:
+ *       - User
+ */
 router.post(
-	'/create',
+	'/',
 	async (req, res, next) => {
 		const parsedData = BodyParser.parseCreateUser(req.body);
 
@@ -50,7 +86,42 @@ router.post(
 	loginUser
 );
 
-// Login (/v1/user/login)
+/**
+ * @openapi
+ * /v1/user/login:
+ *   post:
+ *     summary: Login a user
+ *     parameters:
+ *       - $ref: '#/components/parameters/API_KEY'
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginUserRequest'
+ *     responses:
+ *       200:
+ *         description: User logged in
+ *       400:
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Email or password is incorrect
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: An unknown error occurred
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *     tags:
+ *       - User
+ */
 router.post(
 	'/login',
 	async (req, res, next) => {
@@ -84,9 +155,33 @@ router.post(
 // ===== Protected route below this point ===== //
 router.use(authenticateUser);
 
-// Get user (/v1/account)
-router.post('/', (req, res) => {
-	res.send({ ...req.auth });
+/**
+ * @openapi
+ * /v1/user:
+ *   get:
+ *     summary: Get user
+ *     parameters:
+ *       - $ref: '#/components/parameters/API_KEY'
+ *     responses:
+ *       200:
+ *         description: User found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               properties:
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *     tags:
+ *       - User
+ */
+router.get('/', (req, res) => {
+	res.send({ data: req.auth.user });
 });
 
 export default router;

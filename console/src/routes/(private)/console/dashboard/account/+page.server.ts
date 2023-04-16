@@ -1,14 +1,14 @@
-import { AUTH_TARGET } from '$env/static/private';
 import Zod from '$lib/server/utils/zod/Zod';
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { DELETE, PUT } from '$lib/server/utils/fetch';
 
 export const load = (async () => {
 	return {};
 }) satisfies PageServerLoad;
 
 export const actions: Actions = {
-	update: async ({ request, fetch, locals }) => {
+	update: async ({ request, locals }) => {
 		const form = await request.formData();
 		const formData = Object.fromEntries(form);
 
@@ -17,30 +17,15 @@ export const actions: Actions = {
 			return fail(400, parsedData);
 		}
 
-		await fetch(AUTH_TARGET + '/account/update', {
-			method: 'PUT',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				accessToken: locals.authTokens?.accessToken,
-				sessionToken: locals.authTokens?.sessionToken,
-				...parsedData
-			})
-		});
+		await PUT('/account/update', locals.authTokens || {}, parsedData);
 	},
 
-	delete: async ({ fetch, locals, cookies }) => {
-		const response = await fetch(AUTH_TARGET + '/account', {
-			method: 'DELETE',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				accessToken: locals.authTokens?.accessToken,
-				sessionToken: locals.authTokens?.sessionToken
-			})
-		});
+	delete: async ({ locals, cookies }) => {
+		const response = await DELETE('/account/delete', locals.authTokens || {});
 
 		if (response.ok) {
-			cookies.delete('account_access_token');
-			cookies.delete('account_session_token');
+			cookies.delete('access_token');
+			cookies.delete('session_token');
 		}
 	}
 };

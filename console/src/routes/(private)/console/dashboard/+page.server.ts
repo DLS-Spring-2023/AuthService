@@ -1,18 +1,11 @@
 import type { PageServerLoad } from './$types';
 import { error, fail, redirect, type Actions } from '@sveltejs/kit';
-import { AUTH_TARGET } from '$env/static/private';
 import Zod from '$lib/server/utils/zod/Zod';
+import { GET, POST } from '$lib/server/utils/fetch';
 
-export const load: PageServerLoad = async ({ locals, fetch }) => {
+export const load: PageServerLoad = async ({ locals }) => {
 	const fetchPersonalProjects = async () => {
-		const response = await fetch(AUTH_TARGET + '/project', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				accessToken: locals.authTokens?.accessToken,
-				sessionToken: locals.authTokens?.sessionToken
-			})
-		});
+		const response = await GET('/project', locals.authTokens || {});
 
 		if (!response.ok) {
 			throw error(500, { message: 'Internal Error' });
@@ -28,7 +21,7 @@ export const load: PageServerLoad = async ({ locals, fetch }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, locals, fetch }) => {
+	default: async ({ request, locals }) => {
 		const form = await request.formData();
 		const formData = Object.fromEntries(form);
 
@@ -38,15 +31,7 @@ export const actions: Actions = {
 			return fail(400, parsedData);
 		}
 
-		const response = await fetch(AUTH_TARGET + '/project/create', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				...parsedData, 
-				accessToken: locals.authTokens?.accessToken, 
-				sessionToken: locals.authTokens?.sessionToken
-			})
-		});
+		const response = await POST('/project', locals.authTokens || {}, parsedData);
 
 		if (!response.ok) {
 			return fail(response.status, { message: response.statusText });

@@ -1,20 +1,18 @@
-import { AUTH_TARGET } from '$env/static/private';
 import { fail, redirect, type Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import { DELETE, GET, PUT } from '$lib/server/utils/fetch';
 
-export const load = (async ({ params, locals }) => {
+export const load: PageServerLoad = (async ({ params, locals }) => {
 	const fetchUser = async () => {
-		const response = await fetch(
-			`${AUTH_TARGET}/project/${params.project_id}/users/${params.user_id}`,
-			{
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					accessToken: locals.authTokens?.accessToken,
-					sessionToken: locals.authTokens?.sessionToken
-				})
-			}
+		const response = await GET(
+			`/project/${params.project_id}/users/${params.user_id}`,
+			locals.authTokens || {}
 		);
+
+		if (!response.ok) {
+			return fail(response.status, { message: response.statusText });
+		}
+
 		const data = await response.json();
 		return data.data;
 	};
@@ -38,22 +36,17 @@ export const actions: Actions = {
 			return fail(400, { message: 'Bad Request' });
 		}
 
-		const response = await fetch(
-			`${AUTH_TARGET}/project/${params.project_id}/users/${params.user_id}`,
+		const response = await PUT(
+			`/project/${params.project_id}/users/${params.user_id}`,
+			locals.authTokens || {},
 			{
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					accessToken: locals.authTokens?.accessToken,
-					sessionToken: locals.authTokens?.sessionToken,
-					user: {
-						name,
-						email,
-						password,
-						enabled: enabled ? enabled === 'true' : undefined,
-						verified: verified ? verified === 'true' : undefined
-					}
-				})
+				user: {
+					name,
+					email,
+					password,
+					enabled: enabled ? enabled === 'true' : undefined,
+					verified: verified ? verified === 'true' : undefined
+				}
 			}
 		);
 
@@ -68,16 +61,9 @@ export const actions: Actions = {
 	},
 
 	deleteUser: async ({ params, locals }) => {
-		const response = await fetch(
-			`${AUTH_TARGET}/project/${params.project_id}/users/${params.user_id}`,
-			{
-				method: 'DELETE',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					accessToken: locals.authTokens?.accessToken,
-					sessionToken: locals.authTokens?.sessionToken
-				})
-			}
+		const response = await DELETE(
+			`/project/${params.project_id}/users/${params.user_id}`,
+			locals.authTokens || {}
 		);
 
 		if (!response.ok) {

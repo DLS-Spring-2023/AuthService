@@ -1,4 +1,4 @@
-import { Account, AccountSession, User, UserSession } from '@prisma/client';
+import { Account, User } from '@prisma/client';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import SessionRepo from '../../database/repo/SessionRepo.js';
 import AccountRepo from '../../database/repo/AccountRepo.js';
@@ -6,7 +6,6 @@ import { KeystoreRepo } from '../../util/interfaces.js';
 import UserRepo from '../../database/repo/UserRepo.js';
 import db from '../../database/DatabaseGateway.js';
 import { SessionType } from '../../util/enums.js';
-import Snowflake from '../../util/Snowflake.js';
 import JwtUtils from './JwUtils.js';
 interface IJWT {
 	signAccessToken(account_id: string, session_id: bigint): Promise<string | null>;
@@ -55,7 +54,11 @@ class JWT extends JwtUtils implements IJWT {
 		const session = await this.sessionRepo.startNewSession(user_id);
 		if (!session) return null;
 
-		const payload = { token_id: String(session.tokenData[0].id), session_id: String(session.id), project_id: projct_id };
+		const payload = {
+			token_id: String(session.tokenData[0].id),
+			session_id: String(session.id),
+			project_id: projct_id
+		};
 		const options = { ...JWT.sessionTokenSignOptions, subject: user_id };
 
 		return new Promise<{ token: string; session_id: bigint } | null>((accept) => {
@@ -68,11 +71,15 @@ class JWT extends JwtUtils implements IJWT {
 	private async renewSessionToken(user_id: string, session_id: bigint, project_id?: string) {
 		const privateKey = await this.keystore.find('private', project_id);
 		if (!privateKey) return null;
-		
+
 		const session = await this.sessionRepo.renewSession(session_id);
 		if (!session) return null;
 
-		const payload = { token_id: String(session.tokenData[0].id), session_id: String(session_id), project_id };
+		const payload = {
+			token_id: String(session.tokenData[0].id),
+			session_id: String(session_id),
+			project_id
+		};
 		const options = { ...JWT.sessionTokenSignOptions, subject: user_id };
 
 		return new Promise<string | null>((accept) => {
@@ -83,12 +90,12 @@ class JWT extends JwtUtils implements IJWT {
 	}
 
 	public async verifyAccessToken(token: string) {
-		const publicKey = await this.keystore.find('public', JwtUtils.decodeToken(token).project_id);
+		const publicKey = await this.keystore.find('public', JwtUtils.decodeToken(token)?.project_id);
 		if (!publicKey) return null;
 
 		const decoded = await new Promise<JwtPayload | null>((accept) => {
 			jwt.verify(token, publicKey, JWT.accessTokenVerifyOptions, (error, decoded) => {
-				accept(error || !decoded ? null : decoded as JwtPayload);
+				accept(error || !decoded ? null : (decoded as JwtPayload));
 			});
 		});
 
@@ -114,27 +121,27 @@ class JWT extends JwtUtils implements IJWT {
 	}
 
 	private async verifySessionToken(token: string) {
-		const publicKey = await this.keystore.find('public', JwtUtils.decodeToken(token).project_id);
+		const publicKey = await this.keystore.find('public', JwtUtils.decodeToken(token)?.project_id);
 		if (!publicKey) return null;
-		
+
 		const decoded = await new Promise<JwtPayload | null>((accept) => {
 			jwt.verify(token, publicKey, JWT.sessionTokenVerifyOptions, async (error, decoded) => {
 				error && console.error('RefreshToken:', 'VerifyError -', error.message);
-				accept(error || !decoded ? null : decoded as JwtPayload);
+				accept(error || !decoded ? null : (decoded as JwtPayload));
 			});
 		});
-		
+
 		if (!decoded) return null;
 
 		const { sub, token_id, session_id, project_id } = decoded as JwtPayload;
-					
+
 		if (!sub || !token_id || !session_id) {
 			return null;
 		}
 
 		// If account/user doesn't exist or is banned, delete all related session tokens
 		const account = await this.accountRepo.findById(sub);
-		
+
 		if (!account || !account.enabled) {
 			await this.sessionRepo.deleteByUserId(sub);
 			return null;
@@ -142,14 +149,13 @@ class JWT extends JwtUtils implements IJWT {
 
 		const session = await this.sessionRepo.findById(BigInt(session_id), BigInt(token_id));
 		const tokenData = session?.tokenData[0];
-		
+
 		if (!session || !tokenData) {
 			return null;
 		}
 
 		// If token is expired or invalid, kill session
-		const expired =
-			new Date(Number.parseInt(tokenData.expires.toString())).getTime() < Date.now();
+		const expired = new Date(Number.parseInt(tokenData.expires.toString())).getTime() < Date.now();
 		if (expired || !tokenData.valid) {
 			this.sessionRepo.killSession(BigInt(session_id));
 			return null;
@@ -165,7 +171,7 @@ class JWT extends JwtUtils implements IJWT {
 		token: string;
 		account: Account | User;
 		session_id: bigint;
-		projct_id?: string;
+		project_id?: string;
 	} | null> {
 		const verified = await this.verifySessionToken(token);
 		if (!verified || !verified.account.id) return null;
@@ -175,14 +181,14 @@ class JWT extends JwtUtils implements IJWT {
 			verified.session_id,
 			verified.project_id
 		);
-		
+
 		if (!newToken) return null;
 
 		return {
 			token: newToken,
 			session_id: verified.session_id,
 			account: verified.account,
-			projct_id: verified.project_id
+			project_id: verified.project_id
 		};
 	}
 }

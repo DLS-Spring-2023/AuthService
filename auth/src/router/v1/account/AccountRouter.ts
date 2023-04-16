@@ -11,7 +11,7 @@ const router = Router();
 
 /**
  * @openapi
- * /v1/account/create:
+ * /v1/account:
  *   post:
  *     summary: Create a new account
  *     requestBody:
@@ -19,14 +19,10 @@ const router = Router();
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/CreateAccountRequest'
+ *             $ref: '#/components/schemas/CreateUserRequest'
  *     responses:
  *       201:
  *         description: Created
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/LoginResponse'
  *       400:
  *         description: Bad Request
  *         content:
@@ -55,22 +51,20 @@ const router = Router();
  *       - Account
  */
 router.post(
-	'/create',
+	'/',
 	async (req, res, next) => {
 		if (process.env.ALLOW_MULTIPLE_ACCOUNTS !== '1' && (await db.account.count()) > 1) {
-			res.status(403).send({
+			return res.status(403).send({
 				code: 403,
 				message: 'Only one account can be registered at this time.'
 			});
-			return;
 		}
 
 		const parsedData = BodyParser.parseCreateUser(req.body);
 
 		if (parsedData.error) {
 			delete parsedData.error;
-			res.status(400).send({ code: 400, message: 'Bad Request', errors: parsedData });
-			return;
+			return res.status(400).send({ code: 400, message: 'Bad Request', errors: parsedData });
 		}
 
 		const { name, email, password } = parsedData;
@@ -83,14 +77,16 @@ router.post(
 
 		// Test for insert error
 		if (account.error && account.error === DbError.DUP_ENTRY) {
-			res.status(409).send({ code: 409, message: 'Email already in use' });
-			return;
+			return res.status(409).send({ code: 409, message: 'Email already in use' });
 		} else if (!account || account.error) {
-			res.status(500).send({ code: 500, message: 'Internal Error' });
-			return;
+			return res.status(500).send({ code: 500, message: 'Internal Error' });
 		}
 
-		req.body.account = account;
+		req.auth = {
+			accessToken: undefined as unknown as string,
+			sessionToken: undefined as unknown as string,
+			user: account as Account
+		};
 		res.status(201);
 		next();
 	},
@@ -107,14 +103,10 @@ router.post(
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/LoginAccountRequest'
+ *             $ref: '#/components/schemas/LoginUserRequest'
  *     responses:
  *       200:
  *         description: OK
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/LoginResponse'
  *       400:
  *         description: Bad Request
  *         content:
@@ -133,7 +125,7 @@ router.post(
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- * 
+ *
  *     tags:
  *       - Account
  */
@@ -143,19 +135,21 @@ router.post(
 		const { email, password } = req.body;
 
 		if (!email || typeof email !== 'string' || !password || typeof password !== 'string') {
-			res.status(400).send({ code: 400, message: 'Bad Request' });
-			return;
+			return res.status(400).send({ code: 400, message: 'Bad Request' });
 		}
 
 		const account = await db.account.findByEmail(email.toLowerCase());
 
 		// Check for valid email and password
 		if (!account || !(await bcrypt.compare(password, account.password_hash || ''))) {
-			res.status(401).send({ code: 401, message: 'Email or password is incorrect' });
-			return;
+			return res.status(401).send({ code: 401, message: 'Email or password is incorrect' });
 		}
 
-		req.body.account = account;
+		req.auth = {
+			accessToken: undefined as unknown as string,
+			sessionToken: undefined as unknown as string,
+			user: account
+		};
 		res.status(200);
 		next();
 	},
@@ -168,19 +162,18 @@ router.use(authenticateAccount);
 /**
  * @openapi
  * /v1/account:
- *   post:
+ *   get:
  *     summary: Get account information. Requires authentication.
  *     description: Get information about the authenticated account.
  *     security:
- *       - AccountAccessToken: []
- *         AccountSessionToken: []
+ *       - Authorization: []
  *     responses:
  *       200:
  *         description: OK
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/AuthenticationResponse'
+ *               $ref: '#/components/schemas/User'
  *       401:
  *         description: Unauthorized
  *         content:
@@ -193,68 +186,67 @@ router.use(authenticateAccount);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
- * 
+ *
  *     tags:
  *       - Account
  */
-router.post('/', (req, res) => {
-	res.send({ ...req.auth });
+router.get('/', (req, res) => {
+	res.send({ data: req.auth.user });
 });
 
 /**
-* @openapi
-* /v1/account/update:
-*   put:
-*     summary: Update Account. Requires authentication.
-*     description: Update account with new name, email, or password. Each field is optional, but newPassword requires oldPassword.
-*     security:
-*       - AccountAccessToken: []
-*         AccountSessionToken: []
-*     requestBody:
-*       content:
-*         application/json:
-*           schema:
-*             $ref: '#/components/schemas/UpdateAccountRequest'
-*     responses:
-*       200:
-*         description: OK
-*         content:
-*           application/json:
-*             schema:
-*               $ref: '#/components/schemas/AuthenticatedResponse'
-*       400:
-*         description: Bad Request
-*         content:
-*           application/json:
-*             schema:
-*               $ref: '#/components/schemas/ErrorResponse'
-*       401:
-*         description: Unauthorized
-*         content:
-*           application/json:
-*             schema:
-*               $ref: '#/components/schemas/ErrorResponse'
-*       404:
-*         description: Not Found
-*         content:
-*           application/json:
-*             schema:
-*               $ref: '#/components/schemas/ErrorResponse'
-*       409:
-*         description: Conflict
-*         content:
-*           application/json:
-*             schema:
-*               $ref: '#/components/schemas/ErrorResponse'
-*       500:
-*         description: Internal Server Error
-*         content:
-*           application/json:
-*             schema:
-*               $ref: '#/components/schemas/ErrorResponse'
-*     tags:
-*       - Account
-*/
+ * @openapi
+ * /v1/account/update:
+ *   put:
+ *     summary: Update Account. Requires authentication.
+ *     description: Update account with new name, email, or password. Each field is optional, but newPassword requires oldPassword.
+ *     security:
+ *       - Authorization: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateUserRequest'
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Not Found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       409:
+ *         description: Conflict
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *     tags:
+ *       - Account
+ */
 router.put('/update', async (req, res) => {
 	const { name, email, oldPassword, newPassword } = req.body;
 
@@ -303,76 +295,80 @@ router.put('/update', async (req, res) => {
 
 	req.auth.user.name = account.name as string;
 	req.auth.user.email = account.email as string;
-	res.send({ ...req.auth });
+	res.send({ ...req.auth.user });
 });
 
 /**
-* @openapi
-* /v1/account/logout:
-*   post:
-*     summary: Kill Session. Requires authentication.
-*     description: Kill user session by deleting the session from the database.
-*     security:
-*       - AccountAccessToken: []
-*         AccountSessionToken: []
-*     responses:
-*       204:
-*         description: No Content
-*       401:
-*         description: Unauthorized
-*         content:
-*           application/json:
-*             schema:
-*               type: object
-*               properties:
-*                 message:
-*                   type: string
-*                 code:
-*                   type: integer
-*     tags:
-*       - Account
-*/
+ * @openapi
+ * /v1/account/logout:
+ *   post:
+ *     summary: Kill Session. Requires authentication.
+ *     description: Kill user session by deleting the session from the database.
+ *     security:
+ *       - Authorization: []
+ *     responses:
+ *       204:
+ *         description: No Content
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 code:
+ *                   type: integer
+ *     tags:
+ *       - Account
+ */
 router.post('/logout', async (req, res) => {
 	const { sessionToken } = req.auth;
 
 	const decoded = JwtUtils.decodeToken(sessionToken);
 	await db.accountSession.killSession(BigInt(decoded.session_id));
+
+	res.clearCookie('access_token');
+	res.clearCookie('session_token');
+	res.removeHeader('Authorization');
 	res.status(204).send();
 });
 
 /**
-* @openapi
-* /v1/account:
-*   delete:
-*     summary: Delete Account. Requires authentication.
-*     description: Delete user account from the database.
-*     security:
-*       - AccountAccessToken: []
-*         AccountSessionToken: []
-*     responses:
-*       204:
-*         description: No Content
-*       401:
-*         description: Unauthorized
-*         content:
-*           application/json:
-*             schema:
-*               $ref: '#/components/schemas/ErrorResponse'
-*       500:
-*         description: Internal Server Error
-*         content:
-*           application/json:
-*             schema:
-*               $ref: '#/components/schemas/ErrorResponse'
-*     tags:
-*       - Account
-*/
+ * @openapi
+ * /v1/account:
+ *   delete:
+ *     summary: Delete Account. Requires authentication.
+ *     description: Delete user account from the database.
+ *     security:
+ *       - Authorization: []
+ *     responses:
+ *       204:
+ *         description: No Content
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *     tags:
+ *       - Account
+ */
 router.delete('/', async (req, res) => {
 	const success = await db.account.delete({ id: req.auth.user.id } as Account);
 	const status = success ? 204 : 500;
-	const body = success
-		? { code: status, message: 'success' }
-		: { code: status, message: 'operation failed' };
+	const body = success ? undefined : { code: status, message: 'operation failed' };
+
+	res.clearCookie('access_token');
+	res.clearCookie('session_token');
+	res.removeHeader('Authorization');
 	res.status(status).send(body);
 });
 

@@ -8,52 +8,54 @@ export const handle: Handle = async ({ resolve, event }) => {
 	const verifyUser = async () => {
 		event.locals.consoleUser = undefined;
 
-		const accessToken = event.cookies.get('account_access_token');
-		const sessionToken = event.cookies.get('account_session_token');
+		const accessToken = event.cookies.get('access_token');
+		const sessionToken = event.cookies.get('session_token');
 
 		if (!accessToken && !sessionToken) return;
 
 		const response = await event.fetch(AUTH_TARGET + '/account', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ accessToken, sessionToken })
+			headers: { Authorization: 'Bearer ' + accessToken + ', Session ' + sessionToken }
 		});
 
 		if (!response.ok) {
-			event.cookies.delete('account_session_token');
-			event.cookies.delete('account_session_token');
+			event.cookies.delete('session_token');
+			event.cookies.delete('session_token');
 			return;
 		}
 
-		const data = await response.json();
+		const { data: user } = await response.json();
 
 		event.locals.consoleUser = {
-			id: data.user.id,
-			name: data.user.name,
-			email: data.user.email
+			id: user.id,
+			name: user.name,
+			email: user.email
 		};
+
+		const authHeader = response.headers.get('Authorization');
+		const newTokens = authHeader?.split(', ') || [];
 
 		event.locals.authTokens = {
-			accessToken: data.accessToken,
-			sessionToken: data.sessionToken
+			accessToken: newTokens[0] || accessToken,
+			sessionToken: newTokens[1] || sessionToken
 		};
 
-		if (data.didTokensRefresh) {
-			event.cookies.set('account_session_token', data.sessionToken, {
-				maxAge: 60 * 60 * 24 * 365 - 10,
-				httpOnly: true,
-				secure: true,
-				path: '/',
-				sameSite: 'strict'
-			});
-			event.cookies.set('account_access_token', data.accessToken, {
-				maxAge: 60 * 15 - 10,
-				httpOnly: true,
-				secure: true,
-				path: '/',
-				sameSite: 'strict'
-			});
-		}
+		if (newTokens.length < 2) return;
+
+		event.cookies.set('access_token', newTokens[0].split(' ')[1], {
+			maxAge: 60 * 15 - 10,
+			httpOnly: true,
+			secure: true,
+			path: '/',
+			sameSite: 'strict'
+		});
+
+		event.cookies.set('session_token', newTokens[1].split(' ')[1], {
+			maxAge: 60 * 60 * 24 * 365 - 10,
+			httpOnly: true,
+			secure: true,
+			path: '/',
+			sameSite: 'strict'
+		});
 	};
 
 	await verifyUser();

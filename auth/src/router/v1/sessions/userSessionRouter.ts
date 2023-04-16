@@ -9,11 +9,10 @@ router.use(authenticateUser, verifyProject);
 /**
  * @openapi
  * /v1/session/user:
- *   post:
+ *   get:
  *     summary: Get user's sessions
  *     security:
- *       - AccessToken: []
- *         SessionToken: []
+ *       - Authorization: []
  *     parameters:
  *       - $ref: '#/components/parameters/API_KEY'
  *     responses:
@@ -22,7 +21,10 @@ router.use(authenticateUser, verifyProject);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Session'
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   $ref: '#/components/schemas/Session'
  *       401:
  *         description: Unauthorized
  *         content:
@@ -31,12 +33,11 @@ router.use(authenticateUser, verifyProject);
  *               $ref: '#/components/schemas/ErrorResponse'
  *     tags:
  *       - Session (User access)
- */ 
-// get user sessions (/session/user)
-router.post('/', async (req, res) => {
-    // get user sessions
-    const sessions = await db.userSession.findByUserId(req.auth.user.id);
-    res.send({ data: sessions.map(session => ({...session, id: session.id.toString()})) });
+ */
+router.get('/', async (req, res) => {
+	// get user sessions
+	const sessions = await db.userSession.findByUserId(req.auth.user.id);
+	res.send({ data: sessions.map((session) => ({ ...session, id: session.id.toString() })) });
 });
 
 /**
@@ -45,28 +46,25 @@ router.post('/', async (req, res) => {
  *   delete:
  *     summary: Delete user session
  *     security:
- *       - AccessToken: []
- *         SessionToken: []
+ *       - Authorization: []
  *     parameters:
  *       - $ref: '#/components/parameters/API_KEY'
  *     responses:
  *       204:
  *         description: No Content
- *         
  *       401:
  *         description: Unauthorized
  *         content:
  *           application/json:
- *           schema:
- *             $ref: '#/components/schemas/ErrorResponse'
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *     tags:
  *       - Session (User access)
  */
-// delete user session (/session/user/:session_id)
 router.delete('/:session_id', async (req, res) => {
-    // delete session
-    await db.userSession.killSession(BigInt(req.params.session_id));
-    res.status(204).send();
+	// delete session
+	await db.userSession.killSession(BigInt(req.params.session_id));
+	res.status(204).send();
 });
 
 export default router;

@@ -1,8 +1,8 @@
-import { AUTH_TARGET } from '$env/static/private';
+import { DELETE, PUT } from '$lib/server/utils/fetch';
 import { fail, redirect, type Actions } from '@sveltejs/kit';
 
 export const actions: Actions = {
-	updateName: async ({ request, fetch, locals }) => {
+	updateName: async ({ request, locals }) => {
 		const form = await request.formData();
 
 		const name = form.get('name');
@@ -18,16 +18,8 @@ export const actions: Actions = {
 			return fail(400, { message: 'Name cannot be longer than 64 characters' });
 		}
 
-		const response = await fetch(AUTH_TARGET + `/project/${project_id}`, {
-			method: 'PUT',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				accessToken: locals.authTokens?.accessToken,
-				sessionToken: locals.authTokens?.sessionToken,
-				project: {
-					name: name
-				}
-			})
+		const response = await PUT(`/project/${project_id}`, locals.authTokens || {}, {
+			project: { name: name }
 		});
 
 		const data = await response.json();
@@ -37,7 +29,7 @@ export const actions: Actions = {
 		}
 	},
 
-	delete: async ({ request, fetch, locals }) => {
+	delete: async ({ request, locals }) => {
 		const form = await request.formData();
 
 		const project_id = form.get('project_id');
@@ -46,14 +38,7 @@ export const actions: Actions = {
 			return fail(400, { message: 'Bad Input' });
 		}
 
-		const response = await fetch(AUTH_TARGET + `/project/${project_id}`, {
-			method: 'DELETE',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				accessToken: locals.authTokens?.accessToken,
-				sessionToken: locals.authTokens?.sessionToken
-			})
-		});
+		const response = await DELETE(`/project/${project_id}`, locals.authTokens || {});
 
 		if (!response.ok) {
 			return fail(response.status, { message: response.statusText });

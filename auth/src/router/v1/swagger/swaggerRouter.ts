@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { NextFunction, Request, Response, Router } from 'express';
 import basicAuth from 'express-basic-auth';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJSDoc from 'swagger-jsdoc';
@@ -7,22 +7,11 @@ import swaggerJSDoc from 'swagger-jsdoc';
  * @openapi
  * components:
  *   securitySchemes:
- *     AccountAccessToken:
+ *     Authorization:
  *       type: apiKey
  *       in: header
- *       name: x-account-access-token
- *     AccountSessionToken:
- *       type: apiKey 
- *       in: header
- *       name: x-account-session-token
- *     AccessToken:
- *       type: apiKey
- *       in: header
- *       name: x-access-token
- *     SessionToken:
- *       type: apiKey 
- *       in: header
- *       name: x-session-token
+ *       name: Authorization
+ *       description: 'Bearer token and/or Session token, comma separated. <br>Example: "Bearer \<token\>, Session \<token\>"'
  *   parameters:
  *     API_KEY:
  *       name: API_KEY
@@ -42,7 +31,7 @@ import swaggerJSDoc from 'swagger-jsdoc';
  *     Project:
  *       type: object
  *       properties:
- *         id: 
+ *         id:
  *           type: string
  *         account_id:
  *           type: string
@@ -52,10 +41,15 @@ import swaggerJSDoc from 'swagger-jsdoc';
  *           type: string
  *         updated_at:
  *           type: string
+ *         keystore:
+ *           type: object
+ *           properties:
+ *             api_key:
+ *               type: string
  *     Session:
  *       type: object
  *       properties:
- *         id: 
+ *         id:
  *           type: string
  *         user_id:
  *           type: string
@@ -68,7 +62,7 @@ import swaggerJSDoc from 'swagger-jsdoc';
  *         browser:
  *           type: string
  *         location:
- *           type: string  
+ *           type: string
  *     ErrorResponse:
  *       type: object
  *       properties:
@@ -76,14 +70,14 @@ import swaggerJSDoc from 'swagger-jsdoc';
  *           type: integer
  *         message:
  *           type: string
- *     LoginAccountRequest:
+ *     LoginUserRequest:
  *       type: object
  *       properties:
  *         email:
  *           type: string
  *         password:
  *           type: string
- *     CreateAccountRequest:
+ *     CreateUserRequest:
  *       type: object
  *       properties:
  *         name:
@@ -92,7 +86,7 @@ import swaggerJSDoc from 'swagger-jsdoc';
  *           type: string
  *         password:
  *           type: string
- *     UpdateAccountRequest:
+ *     UpdateUserRequest:
  *       type: object
  *       properties:
  *         name:
@@ -103,54 +97,43 @@ import swaggerJSDoc from 'swagger-jsdoc';
  *           type: string
  *         newPassword:
  *           type: string
- *     LoginResponse:
- *       type: object
- *       properties:
- *         accessToken:
- *           type: string
- *         sessionToken:
- *           type: string 
  */
 
-const router = Router(); 
+const router = Router();
 
 const swaggerDefinition = {
-    openapi: '3.0.0',
-    info: {
-        title: 'jAuth API',
-        version: '1.0.0',
-        description: 'Swagger for jAuth API',
-    },
+	openapi: '3.0.0',
+	info: {
+		title: 'jAuth API',
+		version: '1.0.0',
+		description: 'Swagger for jAuth API'
+	}
 };
 
 const options = {
-    swaggerDefinition,
-    apis: ['./src/router/**/*.ts'],
+	swaggerDefinition,
+	apis: ['./src/router/**/*.ts']
 };
 
 const openapiSpecification = swaggerJSDoc(options);
 
 // Basic auth for /v1/docs. If no user or pass are set, auth will be disabled.
 const authorizer = (username: string, password: string) => {
-    if (!process.env.SWAGGER_USER) return true;
-    
-    const userMatches = basicAuth.safeCompare(username, process.env.SWAGGER_USER);
-    const passwordMatches = basicAuth.safeCompare(password, process.env.SWAGGER_PASS || '');
-    return userMatches && passwordMatches;
-}
+	if (!process.env.SWAGGER_USER) return true;
 
-const docsMiddelware = (req: any, res: any, next: any) => {
-    
-    if (!process.env.SWAGGER_USER) {
-        next();
-    } else {
-        basicAuth({ authorizer, challenge: true })(req, res, next);
-    }
-}
+	const userMatches = basicAuth.safeCompare(username, process.env.SWAGGER_USER);
+	const passwordMatches = basicAuth.safeCompare(password, process.env.SWAGGER_PASS || '');
+	return userMatches && passwordMatches;
+};
 
-router.use(
-    docsMiddelware,
-    swaggerUi.serve, swaggerUi.setup(openapiSpecification)
-);
+const docsMiddelware = (req: Request, res: Response, next: NextFunction) => {
+	if (!process.env.SWAGGER_USER) {
+		next();
+	} else {
+		basicAuth({ authorizer, challenge: true })(req, res, next);
+	}
+};
+
+router.use(docsMiddelware, swaggerUi.serve, swaggerUi.setup(openapiSpecification));
 
 export default router;

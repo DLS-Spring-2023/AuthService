@@ -36,9 +36,6 @@
 		createUserModal.subscribe((value) => (showCreateUserModal = value));
 		deleteUserModal.subscribe((value) => (showDeleteUserModal = value));
 	});
-
-	
-	
 </script>
 
 <div class="relative w-full min-h-full flex">
@@ -70,18 +67,11 @@
 
 			{#if route?.startsWith('/(private)/console/project/[project_id]/auth/[user_id]')}
 				<div class="absolute flex w-full justify-center bottom-0 -left-0">
-					<MenuItem
-						href="/console/project/{project.id}/auth/{$page.params.user_id}"
-					>
-						User
-					</MenuItem>
-					<MenuItem
-						href="/console/project/{project.id}/auth/{$page.params.user_id}/sessions"
-					>
+					<MenuItem href="/console/project/{project.id}/auth/{$page.params.user_id}">User</MenuItem>
+					<MenuItem href="/console/project/{project.id}/auth/{$page.params.user_id}/sessions">
 						Sessions
 					</MenuItem>
 				</div>
-
 			{/if}
 		</div>
 		<slot />

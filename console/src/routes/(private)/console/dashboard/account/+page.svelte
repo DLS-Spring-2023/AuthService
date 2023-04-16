@@ -7,6 +7,7 @@
 	import Input from '$lib/components/Input.svelte';
 	import toast, { ToastType } from '$lib/store/toast';
 	import { onMount } from 'svelte';
+	import { invalidateAll } from '$app/navigation';
 
 	const { consoleUser } = $page.data;
 
@@ -39,6 +40,7 @@
 				case 'success':
 					toast.push({ type: ToastType.success, message: 'Changes saved', closeAfter: 2000 });
 					loading = false;
+					invalidateAll();
 					break;
 				case 'failure':
 					form = result.data;

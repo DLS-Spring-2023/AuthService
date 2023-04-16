@@ -1,7 +1,5 @@
 import { Router } from 'express';
-import JwtUtils from '../../../security/jwt/JwUtils.js';
 import db from '../../../database/DatabaseGateway.js';
-
 
 const router = Router();
 
@@ -28,9 +26,11 @@ const router = Router();
  */
 router.get('/account', async (_, res) => {
 	const key = await db.accountKeystore.find('public');
-	res.send({ data: {
-		publicKey: key?.toString()
-	}});
+	res.send({
+		data: {
+			publicKey: key?.toString()
+		}
+	});
 });
 
 /**
@@ -64,9 +64,11 @@ router.get('/account', async (_, res) => {
 router.get('/project/:project_id', async (req, res) => {
 	const projectId = req.params.project_id;
 	const key = await db.projectKeystore.find('public', projectId);
-	res.send({ data: {
-		publicKey: key?.toString()
-	}});
+	res.send({
+		data: {
+			publicKey: key?.toString()
+		}
+	});
 });
 
 export default router;

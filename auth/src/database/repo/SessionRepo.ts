@@ -1,8 +1,14 @@
-import { AccountSession, AccountTokenData, PrismaClient, UserSession, UserTokenData } from '@prisma/client';
+import {
+	AccountSession,
+	AccountTokenData,
+	PrismaClient,
+	UserSession,
+	UserTokenData
+} from '@prisma/client';
 import { SessionType } from '../../util/enums.js';
 import Snowflake from '../../util/Snowflake.js';
 
-type UserAgent = { ip?: string, browser?: string, os?: string, location?: string };
+type UserAgent = { ip?: string; browser?: string; os?: string; location?: string };
 
 class SessionRepo {
 	private readonly db: PrismaClient;
@@ -19,9 +25,14 @@ class SessionRepo {
 	 * findByUserId
 	 * @param user_id
 	 */
-	public async findByUserId(user_id: string): Promise<(AccountSession & { tokenData: AccountTokenData[] })[] | (UserSession & { tokenData: UserTokenData[] })[]> {
+	public async findByUserId(
+		user_id: string
+	): Promise<
+		| (AccountSession & { tokenData: AccountTokenData[] })[]
+		| (UserSession & { tokenData: UserTokenData[] })[]
+	> {
 		return await this.table.findMany({
-			where: { user_id },
+			where: { user_id }
 		});
 	}
 
@@ -30,13 +41,20 @@ class SessionRepo {
 	 * @param id
 	 * @param token_id
 	 */
-	public async findById(id: bigint, token_id: bigint): Promise<AccountSession & { tokenData: AccountTokenData[] } | UserSession & { tokenData: UserTokenData[] } | null> {
+	public async findById(
+		id: bigint,
+		token_id: bigint
+	): Promise<
+		| (AccountSession & { tokenData: AccountTokenData[] })
+		| (UserSession & { tokenData: UserTokenData[] })
+		| null
+	> {
 		return await this.table.findUnique({
 			where: {
 				id: id
 			},
 			include: {
-				tokenData: { where: { id: token_id, valid: true } },
+				tokenData: { where: { id: token_id, valid: true } }
 			}
 		});
 	}
@@ -49,7 +67,7 @@ class SessionRepo {
 	): Promise<AccountSession | UserSession | null> {
 		return await this.table.findFirst({
 			where: {
-				id: session_id,
+				id: session_id
 			},
 			include: {
 				tokenData: { where: { valid: true } }
@@ -60,35 +78,49 @@ class SessionRepo {
 	/**
 	 * save
 	 */
-	public async startNewSession(user_id: string): Promise<AccountSession & {tokenData: AccountTokenData[]} | UserSession & {tokenData: UserTokenData[]} | null> {
+	public async startNewSession(
+		user_id: string
+	): Promise<
+		| (AccountSession & { tokenData: AccountTokenData[] })
+		| (UserSession & { tokenData: UserTokenData[] })
+		| null
+	> {
 		const id = Snowflake.nextId();
 		const token_id = Snowflake.nextId();
-		return await this.table.create({
-			data: {
-				id: id,
-				user_id: user_id,
-				tokenData: {
-					create: {
-						id: token_id,
-						valid: true,
-						expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365) // one year
+		return await this.table
+			.create({
+				data: {
+					id: id,
+					user_id: user_id,
+					tokenData: {
+						create: {
+							id: token_id,
+							valid: true,
+							expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365) // one year
+						}
 					}
+				},
+				include: {
+					tokenData: { where: { id: token_id } }
 				}
-			},
-			include: {
-				tokenData: { where: { id: token_id } }
-			}
-		}).catch(() => null);
+			})
+			.catch(() => null);
 	}
 
 	/**
 	 * renewSession
 	 */
-	public async renewSession(session_id: bigint): Promise<AccountSession & {tokenData: AccountTokenData[]} | UserTokenData & {tokenData: UserTokenData[]} | null> {
+	public async renewSession(
+		session_id: bigint
+	): Promise<
+		| (AccountSession & { tokenData: AccountTokenData[] })
+		| (UserTokenData & { tokenData: UserTokenData[] })
+		| null
+	> {
 		// find last valid session iteration
 		const session = await this.table.findFirst({
 			where: {
-				id: session_id,
+				id: session_id
 			},
 			include: {
 				tokenData: { where: { valid: true } }
@@ -106,14 +138,18 @@ class SessionRepo {
 			where: {
 				id: session.id
 			},
-			data: { tokenData: { updateMany: {
-				where: {
-					valid: true
-				},
-				data: {
-					valid: false
+			data: {
+				tokenData: {
+					updateMany: {
+						where: {
+							valid: true
+						},
+						data: {
+							valid: false
+						}
+					}
 				}
-			}}}
+			}
 		});
 
 		// create new iteration
@@ -138,32 +174,34 @@ class SessionRepo {
 	}
 
 	public async updateUserAgent(session_id: bigint, { ip, os, browser, location }: UserAgent) {
-		return await this.table.update({
-			where: { id: session_id },
-			data: { ip, os, browser, location }
-		}).catch((err:any) => {
-			console.log(err);
-			return null;
-		});
+		return await this.table
+			.update({
+				where: { id: session_id },
+				data: { ip, os, browser, location }
+			})
+			.catch(() => null);
 	}
-
 
 	/**
 	 * killSession
 	 */
 	public async killSession(id: bigint) {
-		return await this.table.delete({
-			where: { id }
-		}).catch(() => null);
+		return await this.table
+			.delete({
+				where: { id }
+			})
+			.catch(() => null);
 	}
 
 	/**
 	 * deleteByUserId
 	 */
 	public async deleteByUserId(user_id: string) {
-		return await this.table.deleteMany({
-			where: { user_id }
-		}).catch(() => null);
+		return await this.table
+			.deleteMany({
+				where: { user_id }
+			})
+			.catch(() => null);
 	}
 }
 

@@ -2,17 +2,11 @@ import { fail, type Actions } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import Zod from '$lib/server/utils/zod/Zod';
 import { AUTH_TARGET } from '$env/static/private';
+import { GET } from '$lib/server/utils/fetch';
 
-export const load = (async ({ fetch, params, locals }) => {
+export const load = (async ({ params, locals }) => {
 	const fetchUsers = async () => {
-		const response = await fetch(AUTH_TARGET + `/project/${params.project_id}/users`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				accessToken: locals.authTokens?.accessToken,
-				sessionToken: locals.authTokens?.sessionToken
-			})
-		});
+		const response = await GET(`/project/${params.project_id}/users`, locals.authTokens || {});
 
 		if (!response.ok) {
 			return fail(500, { error: true, message: 'Failed to fetch users' });
@@ -39,7 +33,7 @@ export const actions: Actions = {
 			return fail(400, parsedData);
 		}
 
-		const response = await fetch(AUTH_TARGET + `/user/create?API_KEY=${parsedData.api_key}`, {
+		const response = await fetch(AUTH_TARGET + `/user?API_KEY=${parsedData.api_key}`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({

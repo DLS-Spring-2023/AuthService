@@ -1,5 +1,5 @@
-import { AUTH_TARGET } from '$env/static/private';
-import Settings from '../settings/Settings';
+// import { AUTH_TARGET } from '$env/static/private';
+// import Settings from '../settings/Settings';
 
 class Startup {
 	private static async setPublicAccessKey() {
