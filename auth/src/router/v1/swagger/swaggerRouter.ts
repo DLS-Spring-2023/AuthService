@@ -11,7 +11,7 @@ import swaggerJSDoc from 'swagger-jsdoc';
  *       type: apiKey
  *       in: header
  *       name: Authorization
- *       description: 'Bearer token and/or Session token, comma separated. <br>Example: "Bearer \<token\>, Session \<token\>"'
+ *       description: 'Bearer token and/or Session token, comma separated WITH space (important). <br>Example: "Bearer \<token\>, Session \<token\>"'
  *   parameters:
  *     API_KEY:
  *       name: API_KEY

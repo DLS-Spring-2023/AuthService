@@ -13,12 +13,19 @@ export const handle: Handle = async ({ resolve, event }) => {
 
 		if (!accessToken && !sessionToken) return;
 
+		const Authorization = [
+			accessToken ? 'Bearer ' + accessToken : '',
+		 	sessionToken ? 'Session ' + sessionToken : ''
+		]
+		.filter(value => value ? value : false)
+		.reduce((acc, cur) => cur ? acc + ', ' + cur : acc);
+		
 		const response = await event.fetch(AUTH_TARGET + '/account', {
-			headers: { Authorization: 'Bearer ' + accessToken + ', Session ' + sessionToken }
+			headers: { Authorization }
 		});
 
 		if (!response.ok) {
-			event.cookies.delete('session_token');
+			event.cookies.delete('access_token');
 			event.cookies.delete('session_token');
 			return;
 		}
@@ -35,8 +42,8 @@ export const handle: Handle = async ({ resolve, event }) => {
 		const newTokens = authHeader?.split(', ') || [];
 
 		event.locals.authTokens = {
-			accessToken: newTokens[0] || accessToken,
-			sessionToken: newTokens[1] || sessionToken
+			accessToken: newTokens[0]?.split(' ')[1] || accessToken,
+			sessionToken: newTokens[1]?.split(' ')[1] || sessionToken
 		};
 
 		if (newTokens.length < 2) return;
@@ -57,7 +64,7 @@ export const handle: Handle = async ({ resolve, event }) => {
 			sameSite: 'strict'
 		});
 	};
-
+	
 	await verifyUser();
 
 	// Auth check
