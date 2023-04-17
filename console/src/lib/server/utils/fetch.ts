@@ -10,8 +10,8 @@ const getAuthHeader = (tokens: AuthTokens) => {
 		tokens?.accessToken ? 'Bearer ' + tokens?.accessToken : '',
 		tokens?.sessionToken ? 'Session ' + tokens?.sessionToken : ''
 	]
-	.filter(value => value ? value : false)
-	.reduce((acc, cur) => cur ? acc + ', ' + cur : acc);
+		.filter((value) => (value ? value : false))
+		.reduce((acc, cur) => (cur ? acc + ', ' + cur : acc));
 };
 
 export const GET = async (path: string, tokens: AuthTokens) => {

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import FaEye from 'svelte-icons/fa/FaEye.svelte';
 	import FaEyeSlash from 'svelte-icons/fa/FaEyeSlash.svelte';
-	import Copy from 'svelte-icons/fa/FaRegCopy.svelte'
+	import Copy from 'svelte-icons/fa/FaRegCopy.svelte';
 	import Clipboard from 'clipboard';
 
 	export let type: 'text' | 'password' | 'email' = 'text';
@@ -44,8 +44,8 @@
 		});
 
 		clipboard.on('error', () => {
-			bg = 'bg-red-500'
-			duration = 'duration-100'
+			bg = 'bg-red-500';
+			duration = 'duration-100';
 			setTimeout(() => {
 				bg = 'bg-dark';
 				duration = 'duration-300';
@@ -93,7 +93,11 @@
 				</button>
 			{/if}
 			{#if type === 'password'}
-				<button type="button" on:click|preventDefault={() => (hidePass = !hidePass)} class="w-6 hover:text-gray-50">
+				<button
+					type="button"
+					on:click|preventDefault={() => (hidePass = !hidePass)}
+					class="w-6 hover:text-gray-50"
+				>
 					{#if hidePass}<FaEye />{:else}<FaEyeSlash />{/if}
 				</button>
 			{/if}

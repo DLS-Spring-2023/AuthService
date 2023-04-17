@@ -9,9 +9,9 @@
 	<div
 		class="w-full bg-dark brightness-125 rounded-xl border-full p-4 flex justify-between items-center"
 	>
-		<label for="api_key" class="mr-4">Project ID</label>
+		<label for="id" class="mr-4">Project ID</label>
 		<div class="hover:cursor-text w-80">
-			<Input type="text" id="api_key" disabled cursor="text" copy value={project.id} />
+			<Input type="text" id="id" disabled cursor="text" copy value={project.id} />
 		</div>
 	</div>
 
@@ -20,7 +20,14 @@
 	>
 		<label for="api_key" class="mr-4">API KEY</label>
 		<div class="hover:cursor-text w-80">
-			<Input type="password" id="api_key" disabled cursor="text" copy value={project.keystore.api_key} />
+			<Input
+				type="password"
+				id="api_key"
+				disabled
+				cursor="text"
+				copy
+				value={project.keystore.api_key}
+			/>
 		</div>
 	</div>
 </div>

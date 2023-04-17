@@ -15,11 +15,11 @@ export const handle: Handle = async ({ resolve, event }) => {
 
 		const Authorization = [
 			accessToken ? 'Bearer ' + accessToken : '',
-		 	sessionToken ? 'Session ' + sessionToken : ''
+			sessionToken ? 'Session ' + sessionToken : ''
 		]
-		.filter(value => value ? value : false)
-		.reduce((acc, cur) => cur ? acc + ', ' + cur : acc);
-		
+			.filter((value) => (value ? value : false))
+			.reduce((acc, cur) => (cur ? acc + ', ' + cur : acc));
+
 		const response = await event.fetch(AUTH_TARGET + '/account', {
 			headers: { Authorization }
 		});
@@ -64,7 +64,7 @@ export const handle: Handle = async ({ resolve, event }) => {
 			sameSite: 'strict'
 		});
 	};
-	
+
 	await verifyUser();
 
 	// Auth check
