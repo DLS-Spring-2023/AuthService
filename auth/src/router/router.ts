@@ -5,4 +5,8 @@ const router = Router();
 
 router.use('/v1', v1Router);
 
+router.get('/status', (req, res) => {
+    res.status(200).send('OK');
+});
+
 export default router;

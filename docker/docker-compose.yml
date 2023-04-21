@@ -14,12 +14,25 @@ services:
     networks:
       - jauth
     environment:
-      REQUIRE_AUTH: 0 #change to 0 to disable auth (not recommended in production)
+      PORT: ${AUTH_PORT}
+      RSA_ENCRYPTION_SECRET: ${RSA_ENCRYPTION_SECRET}
+      ALLOW_MULTIPLE_ACCOUNTS: ${ALLOW_MULTIPLE_ACCOUNTS}
+      ACCOUNT_NAME: ${ACCOUNT_NAME}
+      ACCOUNT_PASS: ${ACCOUNT_PASS}
+      ACCOUNT_EMAIL: ${ACCOUNT_EMAIL}
+      PROJECT_NAMES: ${PROJECT_NAMES}
       DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_SCHEMA: ${DB_SCHEMA}
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
+      DB_URL: ${DB_URL}
+      SWAGGER_USER: ${SWAGGER_USER}
+      SWAGGER_PASS: ${SWAGGER_PASS}
+    depends_on:
+      - db
 
-  mariadb:
+  db:
     container_name: jauth-db
     image: mariadb:latest
     restart: unless-stopped
