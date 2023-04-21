@@ -83,7 +83,7 @@ const login = async (req: Request, res: Response, type: AuthType) => {
 
 const authenticate = async (req: Request, res: Response, next: NextFunction, type: AuthType) => {
 	const JWT = type === AuthType.Account ? AccountJWT : UserJWT;
-
+	
 	let accessToken = req.cookies.access_token;
 	let sessionToken = req.cookies.session_token;
 
@@ -138,7 +138,6 @@ const authenticate = async (req: Request, res: Response, next: NextFunction, typ
 	req.auth = {
 		accessToken,
 		sessionToken: verifiedSession.token,
-		didTokensRefresh: true,
 		user: {
 			id: verifiedSession.account.id,
 			name: verifiedSession.account.name as string,

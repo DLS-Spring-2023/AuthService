@@ -79,7 +79,11 @@ router.post(
 			return;
 		}
 
-		req.body.user = user;
+		req.auth = {
+			accessToken: undefined as unknown as string,
+			sessionToken: undefined as unknown as string,
+			user: user as User
+		};
 		res.status(201);
 		next();
 	},
@@ -144,8 +148,12 @@ router.post(
 			res.status(401).send({ code: 401, message: 'User is banned' });
 			return;
 		}
-
-		req.body.user = user;
+		
+		req.auth = {
+			accessToken: undefined as unknown as string,
+			sessionToken: undefined as unknown as string,
+			user
+		};
 		res.status(200);
 		next();
 	},

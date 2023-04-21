@@ -9,7 +9,6 @@ declare module 'express-serve-static-core' {
 		auth: {
 			accessToken: string;
 			sessionToken: string;
-			didTokensRefresh?: boolean;
 			user: {
 				id: string;
 				name: string;
@@ -25,6 +24,10 @@ await db.init();
 
 const app = express();
 
+app.use((req, _, next) => {
+	req.auth = { accessToken: '', sessionToken: '', user: { id: '', name: '', email: '' } };
+	next();
+});
 app.use(express.json());
 app.use(cookies());
 
