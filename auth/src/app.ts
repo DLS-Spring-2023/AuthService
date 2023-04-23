@@ -9,6 +9,7 @@ declare module 'express-serve-static-core' {
 		auth: {
 			accessToken: string;
 			sessionToken: string;
+			sessionId?: bigint;
 			user: {
 				id: string;
 				name: string;

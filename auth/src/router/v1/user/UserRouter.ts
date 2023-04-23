@@ -82,6 +82,7 @@ router.post(
 		req.auth = {
 			accessToken: undefined as unknown as string,
 			sessionToken: undefined as unknown as string,
+			sessionId: undefined as unknown as bigint,
 			user: user as User
 		};
 		res.status(201);
@@ -152,6 +153,7 @@ router.post(
 		req.auth = {
 			accessToken: undefined as unknown as string,
 			sessionToken: undefined as unknown as string,
+			sessionId: undefined as unknown as bigint,
 			user
 		};
 		res.status(200);
@@ -190,6 +192,33 @@ router.use(authenticateUser);
  */
 router.get('/', (req, res) => {
 	res.send({ data: req.auth.user });
+});
+
+/**
+ * @openapi
+ * /v1/user/logout:
+ *   post:
+ *      summary: Logout a user
+ *      parameters:
+ *        - $ref: '#/components/parameters/API_KEY'
+ *      responses:
+ *        200:
+ *          description: User logged out
+ *        401:
+ *          description: Unauthorized
+ *          content:
+ *            application/json:
+ *              schema:
+ *                $ref: '#/components/schemas/ErrorResponse'
+ *      tags:
+ *       - User
+ */
+router.post('/logout', async (req, res) => {
+	res.clearCookie('access_token');
+	res.clearCookie('session_token');
+	
+	if (req.auth.sessionId) await db.userSession.killSession(BigInt(req.auth.sessionId));
+	res.send({ data: 'User logged out' });
 });
 
 export default router;

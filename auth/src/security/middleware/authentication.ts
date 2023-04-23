@@ -48,7 +48,7 @@ const login = async (req: Request, res: Response, type: AuthType) => {
 	const JWT = type === AuthType.Account ? AccountJWT : UserJWT;
 	const userId = req.auth.user.id;
 
-	const session = await JWT.signNewSessionToken(userId);
+	const session = await JWT.signNewSessionToken(userId, type === AuthType.User ? req.project.id : undefined);
 
 	if (!session) {
 		return res.status(500).send({ code: 500, message: 'Internal Error' });
@@ -108,6 +108,7 @@ const authenticate = async (req: Request, res: Response, next: NextFunction, typ
 		req.auth = {
 			accessToken,
 			sessionToken,
+			sessionId: verifiedAccess.session_id,
 			user: {
 				id: verifiedAccess.account.id,
 				name: verifiedAccess.account.name as string,
@@ -119,7 +120,7 @@ const authenticate = async (req: Request, res: Response, next: NextFunction, typ
 
 	// Verify session token if access was not verified
 	const verifiedSession = sessionToken ? await JWT.validateAndRenewSession(sessionToken) : null;
-
+	
 	if (
 		!verifiedSession ||
 		!verifiedSession.token ||
@@ -138,6 +139,7 @@ const authenticate = async (req: Request, res: Response, next: NextFunction, typ
 	req.auth = {
 		accessToken,
 		sessionToken: verifiedSession.token,
+		sessionId: verifiedSession.session_id,
 		user: {
 			id: verifiedSession.account.id,
 			name: verifiedSession.account.name as string,
