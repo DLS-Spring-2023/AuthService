@@ -196,6 +196,107 @@ router.get('/', (req, res) => {
 
 /**
  * @openapi
+ * /v1/user:
+ *   put:
+ *     summary: Update user. Requires authentication.
+ *     description: Update user with new name, email, or password. Each field is optional, but newPassword requires oldPassword.
+ *     security:
+ *       - Authorization: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateUserRequest'
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Bad Request
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Not Found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       409:
+ *         description: Conflict
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *     tags:
+ *       - User
+ */
+router.put('/', async (req, res) => {
+	const { name, email, oldPassword, newPassword } = req.body;
+	const parsedData = BodyParser.parseUpdateAccount({
+		name,
+		email,
+		oldPassword,
+		newPassword
+	});
+
+	if (parsedData.error) {
+		return res.status(400).send(parsedData);
+	}
+
+	const user = await db.user.findById(req.auth.user.id);
+	if (!user) {
+		return res.status(404).send({ code: 404, message: 'Not Found' });
+	}
+
+	if (parsedData.name) user.name = name;
+	if (parsedData.email) user.email = email;
+	if (parsedData.newPassword) {
+		const verified = await bcrypt.compare(
+			parsedData.oldPassword as string,
+			user.password_hash as string
+		);
+		if (!verified) {
+			res.status(401).send({ error: true, oldPassword: 'Password incorrect' });
+			return;
+		} else {
+			user.password_hash = await bcrypt.hash(parsedData.newPassword as string, 12);
+		}
+	}
+
+	const result = await db.user.update(user);
+
+	// Test and handle insert error
+	if (result.error && result.error === DbError.DUP_ENTRY) {
+		return res.status(409).send({ code: 409, message: 'Email already in use' });
+	} else if (!result || result.error) {
+		return res.status(500).send({ code: 500, message: 'Internal Error' });
+	}
+
+	req.auth.user.name = user.name as string;
+	req.auth.user.email = user.email as string;
+	res.send({ ...req.auth.user });
+});
+
+
+/**
+ * @openapi
  * /v1/user/logout:
  *   post:
  *      summary: Logout a user
