@@ -27,7 +27,7 @@ jobs:
           file-name: '.env' # Optional (default : '.env')
           directory: 'auth/' # Optional (default: '.')
         env: # env available for only this steps
-          PORT: 443
+          PORT: 8080
           RSA_ENCRYPTION_SECRET: ${{ secrets.RSA_ENCRYPTION_SECRET }}
           ALLOW_MULTIPLE_ACCOUNTS: 0
           ACCOUNT_NAME: ${{ secrets.ACCOUNT_NAME }}
