@@ -54,7 +54,8 @@ const login = async (req: Request, res: Response, type: AuthType) => {
 		return res.status(500).send({ code: 500, message: 'Internal Error' });
 	}
 
-	const accessToken = await JWT.signAccessToken(userId, session?.session_id);
+	const project_id = type === AuthType.User ? req.project.id : undefined;
+	const accessToken = await JWT.signAccessToken(userId, session?.session_id, project_id);
 
 	res.cookie('access_token', accessToken, {
 		maxAge: 1000 * 60 * 15 - 10,
