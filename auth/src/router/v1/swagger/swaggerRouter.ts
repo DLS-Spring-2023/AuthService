@@ -2,6 +2,7 @@ import { NextFunction, Request, Response, Router } from 'express';
 import basicAuth from 'express-basic-auth';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJSDoc from 'swagger-jsdoc';
+import Log from '../../../util/ServiceBus.js';
 
 /**
  * @openapi
@@ -134,6 +135,14 @@ const docsMiddelware = (req: Request, res: Response, next: NextFunction) => {
 	}
 };
 
-router.use(docsMiddelware, swaggerUi.serve, swaggerUi.setup(openapiSpecification));
+const log = (req: Request, __: Response, next: NextFunction) => {
+	Log.logInfo('Swagger docs accessed', {
+		datetime: new Date().toISOString(),
+		from_ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress
+	});
+	next();
+}
+
+router.use(docsMiddelware, log, swaggerUi.serve, swaggerUi.setup(openapiSpecification));
 
 export default router;

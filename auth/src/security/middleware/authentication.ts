@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { AccountJWT, UserJWT } from '../jwt/JWT.js';
 import db from '../../database/DatabaseGateway.js';
+import Log from '../../util/ServiceBus.js';
 
 enum AuthType {
 	Account,
@@ -80,6 +81,11 @@ const login = async (req: Request, res: Response, type: AuthType) => {
 	res.send();
 
 	saveUserAgent(session.session_id, req, type === AuthType.Account ? 'account' : 'user');
+	Log.logInfo(`New user login`, {
+		user_id: userId,
+		project_id: project_id,
+		datetime: new Date().toISOString(),
+	});
 };
 
 const authenticate = async (req: Request, res: Response, next: NextFunction, type: AuthType) => {

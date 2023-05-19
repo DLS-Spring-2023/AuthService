@@ -9,6 +9,7 @@ import BodyParser from '../../../util/BodyParser.js';
 import db from '../../../database/DatabaseGateway.js';
 import { User } from '@prisma/client';
 import { DbError } from '../../../util/enums.js';
+import Log from '../../../util/ServiceBus.js';
 
 const router = Router();
 
@@ -320,6 +321,12 @@ router.post('/logout', async (req, res) => {
 	
 	if (req.auth.sessionId) await db.userSession.killSession(BigInt(req.auth.sessionId));
 	res.send({ data: 'User logged out' });
+
+	Log.logInfo(`User logged out`, {
+		user_id: req.auth.user.id,
+		project_id: req.project.id,
+		datetime: new Date().toISOString()
+	});
 });
 
 export default router;
