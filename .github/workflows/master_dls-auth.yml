@@ -42,6 +42,7 @@ jobs:
           DB_URL: ${{ secrets.DB_URL }}
           SWAGGER_USER: ${{ secrets.SWAGGER_USER }}
           SWAGGER_PASS: ${{ secrets.SWAGGER_PASS }}
+          SERVICE_BUS_URL: ${{ secrets.SERVICE_BUS_URL }}
 
       - name: npm install, build, and test
         run: |
