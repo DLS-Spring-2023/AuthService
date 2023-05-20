@@ -3,6 +3,7 @@ import cookies from 'cookie-parser';
 import db from './database/DatabaseGateway.js';
 import router from './router/router.js';
 import { Project } from '@prisma/client';
+import Logger from './util/Logger.js';
 
 declare module 'express-serve-static-core' {
 	interface Request {
@@ -36,5 +37,8 @@ app.use(router);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-	console.log('Auth server came online at port', PORT);
+	Logger.logInfo('Auth server came online', {
+		port: PORT,
+		datetime: new Date().toISOString(),
+	}).catch();
 });

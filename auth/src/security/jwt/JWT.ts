@@ -7,7 +7,7 @@ import UserRepo from '../../database/repo/UserRepo.js';
 import db from '../../database/DatabaseGateway.js';
 import { SessionType } from '../../util/enums.js';
 import JwtUtils from './JwUtils.js';
-import Log from '../../util/ServiceBus.js';
+import Logger from '../../util/Logger.js';
 
 interface IJWT {
 	signAccessToken(account_id: string, session_id: bigint): Promise<string | null>;
@@ -129,10 +129,10 @@ class JWT extends JwtUtils implements IJWT {
 		const decoded = await new Promise<JwtPayload | null>((accept) => {
 			jwt.verify(token, publicKey, JWT.sessionTokenVerifyOptions, async (error, decoded) => {
 				error && console.error('RefreshToken:', 'VerifyError -', error.message);
-				if (error) Log.logWarning(`Error verifying session token`, {
+				if (error) Logger.logWarning(`Error verifying session token`, {
 					error: error.message,
 					datetime: new Date().toISOString(),
-				});
+				}).catch();
 				
 				accept(error || !decoded ? null : (decoded as JwtPayload));
 			});
@@ -164,13 +164,13 @@ class JWT extends JwtUtils implements IJWT {
 		// If token is expired or invalid, kill session
 		const expired = new Date(Number.parseInt(tokenData.expires.toString())).getTime() < Date.now();
 		if (expired || !tokenData.valid) {
-			Log.logInfo(`Invalid or expired session token detected`, {
+			Logger.logInfo(`Invalid or expired session token detected`, {
 				expired: expired,
 				valid: tokenData.valid,
 				token: token_id,
 				session: session_id,
 				datetime: new Date().toISOString(),
-			});
+			}).catch();
 			this.sessionRepo.killSession(BigInt(session_id));
 			return null;
 		}

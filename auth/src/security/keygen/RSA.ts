@@ -1,6 +1,6 @@
 import NodeRSA from 'node-rsa';
 import crypto from 'crypto';
-import Log from '../../util/ServiceBus.js';
+import Logger from '../../util/Logger.js';
 
 enum Format {
 	privateDer = 'pkcs8-private-der',
@@ -59,10 +59,10 @@ class RSA {
 		const start = performance.now();
 		this.key.generateKeyPair();
 		const duration = (performance.now() - start) / 1000;
-		Log.logInfo(`Generated new RSA key`, {
+		Logger.logInfo(`Generated new RSA key`, {
 			duration: `${duration}s`,
 			datetime: new Date().toISOString(),
-		});
+		}).catch();
 	}
 }
 

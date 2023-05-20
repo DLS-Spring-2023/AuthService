@@ -2,7 +2,7 @@ import { NextFunction, Request, Response, Router } from 'express';
 import basicAuth from 'express-basic-auth';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJSDoc from 'swagger-jsdoc';
-import Log from '../../../util/ServiceBus.js';
+import Logger from '../../../util/Logger.js';
 
 /**
  * @openapi
@@ -136,10 +136,10 @@ const docsMiddelware = (req: Request, res: Response, next: NextFunction) => {
 };
 
 const log = (req: Request, __: Response, next: NextFunction) => {
-	Log.logInfo('Swagger docs accessed', {
+	Logger.logInfo('Swagger docs accessed', {
 		datetime: new Date().toISOString(),
 		from_ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress
-	});
+	}).catch();
 	next();
 }
 
